@@ -1,0 +1,81 @@
+package com.github.liebharc.queryenrichment
+
+import java.util.ArrayList
+import java.util.stream.Collectors
+import kotlin.math.atan
+
+class InMemoryQueryBuilder : QueryBuilder {
+
+    override fun build(selectors: List<QuerySelector>, filters: List<QueryFilter>): com.github.liebharc.queryenrichment.Query {
+        if (!filters.isEmpty()) {
+            throw IllegalArgumentException("This class doesn't support criteria")
+        }
+
+        return Query(selectors)
+    }
+
+    class Database {
+        val students: MutableList<Student> = ArrayList()
+
+        fun clear() {
+            students.clear()
+        }
+
+        fun add(student: Student) {
+            students.add(student)
+        }
+
+        fun setup(vararg students: Student) {
+            this.clear()
+            for (student in students) {
+                this.add(student)
+            }
+
+        }
+    }
+
+    inner class Query(private val steps: List<QuerySelector>) : com.github.liebharc.queryenrichment.Query {
+
+        override fun query(request: Request): QueryResult {
+            val rows = database.students.map { student ->
+                steps.map { selector ->
+                    val attribute = selector.attribute
+                    if (attribute == Attributes.studentId) {
+                        student.id
+                    } else if (attribute == Attributes.firstName) {
+                        student.firstName
+                    } else if (attribute == Attributes.lastName) {
+                        student.lastName
+                    }
+
+                    throw IllegalArgumentException("Unknown column $selector")
+                }
+                .toList()
+            }.toList()
+            return QueryResult(rows)
+        }
+    }
+
+    companion object {
+        val database = Database()
+
+        val studentId = SelectorBuilder(Attributes.studentId).addColumn("ID").build()
+        val firstName = SelectorBuilder(Attributes.firstName).addColumn("FIRST_NAME").build()
+        val lastName = SelectorBuilder(Attributes.lastName).addColumn("LAST_NAME").build()
+        val fullName: ExecutableStep<String, Any?> = object : ParameterlessEnrichment<String>(Attributes.fullName, Dependencies.requireOneOf(Attributes.firstName, Attributes.lastName)) {
+            override fun enrich(result: IntermediateResult) {
+                val firstName = result.get(Attributes.firstName)
+                val lastName = result.get(Attributes.lastName)
+                if (firstName != null && lastName != null) {
+                    result.add(this, "$firstName $lastName")
+                } else if (firstName != null) {
+                    result.add(this, firstName)
+                } else if (lastName != null) {
+                    result.add(this, lastName)
+                } else {
+                    throw RuntimeException("At least one of firstName and lastName must be available")
+                }
+            }
+        }
+    }
+}
