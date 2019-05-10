@@ -9,13 +9,13 @@ package com.github.liebharc.queryenrichment
 </TAttribute> */
 internal class AddValuesFromFilter<TAttribute, TParameter> private constructor(attribute: Attribute<TAttribute>,
                                                                                /** An equality expression  */
-                                                                               private val expression: SimpleExpression) : Enrichment<TAttribute, TParameter>(attribute, null, Dependencies.noDependencies()) {
+                                                                               private val expression: SimpleExpression<TAttribute>) : Enrichment<TAttribute, TParameter>(attribute, null, Dependencies.noDependencies()) {
 
     override val canBeConstant: Boolean
         get() = true
 
     override fun enrich(result: IntermediateResult, parameter: TParameter) {
-        result.add(this, expression.value as TAttribute)
+        result.add(this, expression.value)
     }
 
     companion object {
@@ -27,8 +27,8 @@ internal class AddValuesFromFilter<TAttribute, TParameter> private constructor(a
          */
         fun <TAttribute, TParameter> create(
                 attribute: Attribute<TAttribute>,
-                expression: SimpleExpression): AddValuesFromFilter<TAttribute, TParameter> {
-            return AddValuesFromFilter<TAttribute, TParameter>(attribute, expression)
+                expression: SimpleExpression<TAttribute>): AddValuesFromFilter<TAttribute, TParameter> {
+            return AddValuesFromFilter(attribute, expression)
         }
     }
 }

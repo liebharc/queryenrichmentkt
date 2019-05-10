@@ -2,7 +2,7 @@ package com.github.liebharc.queryenrichment
 
 import java.util.*
 
-internal class EqualityFilter<TAttribute, TParameter>(innerStep: ExecutableStep<TAttribute, TParameter>, expression: SimpleExpression) : FilterStep<TAttribute, TParameter>(innerStep, expression) {
+internal class EqualityFilter<TAttribute, TParameter>(innerStep: ExecutableStep<TAttribute, TParameter>, expression: SimpleExpression<TAttribute>) : FilterStep<TAttribute, TParameter>(innerStep, expression) {
     override val column: String?
         get() = innerStep.column
 

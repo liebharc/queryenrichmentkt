@@ -7,18 +7,18 @@ import java.util.Objects
  * A filter expression such as: a = b or a != b
  * Inspired by Hibernate, needs to be fleshed out before it is useful.
  */
-class SimpleExpression(
+class SimpleExpression<TAttribute>(
         /** The attribute which shall be filtered for  */
         val attribute: Attribute<*>,
         /** The filter expression, e.g. = or !=  */
         val operation: String,
         /** The value for the RHS of the filter expression  */
-        val value: Any?) : Serializable {
+        val value: TAttribute) : Serializable {
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other == null || javaClass != other.javaClass) return false
-        val that = other as SimpleExpression?
+        val that = other as SimpleExpression<*>?
         return attribute == that!!.attribute && operation == that.operation
     }
 
@@ -40,14 +40,14 @@ class SimpleExpression(
         /**
          * Creates an equal expression.
          */
-        fun <T> eq(propertyName: Attribute<T>, value: T): SimpleExpression {
+        fun <T> eq(propertyName: Attribute<T>, value: T): SimpleExpression<T> {
             return SimpleExpression(propertyName, "=", value)
         }
 
         /**
          * Creates a not equal expression.
          */
-        fun <T> neq(propertyName: Attribute<T>, value: T): SimpleExpression {
+        fun <T> neq(propertyName: Attribute<T>, value: T): SimpleExpression<T> {
             return SimpleExpression(propertyName, "!=", value)
         }
     }

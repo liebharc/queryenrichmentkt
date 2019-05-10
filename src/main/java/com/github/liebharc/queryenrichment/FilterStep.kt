@@ -5,7 +5,7 @@ internal abstract class FilterStep<TAttribute, TParameter> protected constructor
         /** The step which produces the attribute we have to filter for  */
         protected val innerStep: ExecutableStep<TAttribute, TParameter>,
         /** The filter expression  */
-        protected val expression: SimpleExpression) : ExecutableStep<TAttribute, TParameter> {
+        protected val expression: SimpleExpression<TAttribute>) : ExecutableStep<TAttribute, TParameter> {
 
     override val attribute: Attribute<TAttribute>
         get() = innerStep.attribute
@@ -28,7 +28,7 @@ internal abstract class FilterStep<TAttribute, TParameter> protected constructor
 
         fun <TAttribute, TParameter> createFilter(
                 innerStep: ExecutableStep<TAttribute, TParameter>,
-                expression: SimpleExpression): FilterStep<TAttribute, TParameter> {
+                expression: SimpleExpression<TAttribute>): FilterStep<TAttribute, TParameter> {
             if (expression.operation != "=") {
                 throw IllegalArgumentException("Only equality is supported right now")
             }

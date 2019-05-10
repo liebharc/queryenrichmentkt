@@ -5,7 +5,7 @@ class InMemoryPlanBuilder(steps: List<ExecutableStep<*, Any?>>) : PlanBuilder<An
     protected override val queryBuilder: QueryBuilder
         get() = InMemoryQueryBuilder()
 
-    override fun isSupportedByQuery(criteria: SimpleExpression): Boolean {
+    override fun isSupportedByQuery(criteria: SimpleExpression<*>): Boolean {
         return false
     }
 }

@@ -1,5 +1,6 @@
 package com.github.liebharc.queryenrichment
 
+import org.w3c.dom.Attr
 import java.util.*
 
 /**
@@ -86,11 +87,15 @@ abstract class PlanBuilder<TParameter>(steps: List<ExecutableStep<*, TParameter>
     /**
      * Creates Java filters for the given filter expressions.
      */
-    private fun createFilterSteps(javaFilters: List<SimpleExpression>): List<ExecutableStep<*, TParameter>> {
+    @Suppress("UNCHECKED_CAST")
+    private fun createFilterSteps(javaFilters: List<SimpleExpression<*>>): List<ExecutableStep<*, TParameter>> {
         return javaFilters.map { expr ->
             val step = attributeToStep[expr.attribute]
                     ?: throw IllegalArgumentException("Failed to find selector for expression $expr")
-            FilterStep.createFilter(step, expr)
+            FilterStep.createFilter(
+                    step as ExecutableStep<Any?, TParameter>,
+                    expr as SimpleExpression<Any?>
+            )
         }
         .toList()
     }
@@ -123,7 +128,8 @@ abstract class PlanBuilder<TParameter>(steps: List<ExecutableStep<*, TParameter>
     /**
      * Replaces steps by constants where possible.
      */
-    private fun injectConstants(queryFilters: List<SimpleExpression>, steps: List<ExecutableStep<*, TParameter>>): List<ExecutableStep<*, TParameter>> {
+    @Suppress("UNCHECKED_CAST")
+    private fun injectConstants(queryFilters: List<SimpleExpression<*>>, steps: List<ExecutableStep<*, TParameter>>): List<ExecutableStep<*, TParameter>> {
         val equalityFilters = queryFilters
                 .filter { this.isEqualityExpression(it) }
                 .groupBy { it.attribute }
@@ -131,7 +137,10 @@ abstract class PlanBuilder<TParameter>(steps: List<ExecutableStep<*, TParameter>
         return steps.map { step ->
             val filterExpression = equalityFilters[step.attribute]?.first()
             if (filterExpression != null) {
-                AddValuesFromFilter.create(step.attribute, filterExpression)
+                AddValuesFromFilter.create(
+                        step.attribute as Attribute<Any?>,
+                        filterExpression as SimpleExpression<Any?>
+                )
             } else {
                 step
             }
@@ -141,7 +150,8 @@ abstract class PlanBuilder<TParameter>(steps: List<ExecutableStep<*, TParameter>
     /**
      * Find the required steps to implement the given list of filters in Java.
      */
-    private fun findRequiredSteps(queryExpressions: List<SimpleExpression>, request: Request): List<ExecutableStep<*, TParameter>> {
+    @Suppress("UNCHECKED_CAST")
+    private fun findRequiredSteps(queryExpressions: List<SimpleExpression<*>>, request: Request): List<ExecutableStep<*, TParameter>> {
         val equalityFilters = queryExpressions
                 .filter { this.isEqualityExpression(it) }
                 .groupBy { it.attribute }
@@ -150,7 +160,10 @@ abstract class PlanBuilder<TParameter>(steps: List<ExecutableStep<*, TParameter>
                 .map { attr ->
                     val filterExpression = equalityFilters[attr]?.first()
                     if (filterExpression != null) {
-                        AddValuesFromFilter.create(attr, filterExpression)
+                        AddValuesFromFilter.create(
+                                attr as Attribute<Any?>,
+                                filterExpression as SimpleExpression<Any?>
+                        )
                     }
                     else {
                         attributeToStep.get(attr)!!
@@ -205,7 +218,7 @@ abstract class PlanBuilder<TParameter>(steps: List<ExecutableStep<*, TParameter>
     /**
      * Adds the column names to a filter expression.
      */
-    private fun translatePropertyNames(criteria: List<SimpleExpression>): List<QueryFilter> {
+    private fun translatePropertyNames(criteria: List<SimpleExpression<*>>): List<QueryFilter> {
         return criteria.map { expr ->
             val selector = attributeToStep[expr.attribute]?.column
             if (selector != null) {
@@ -220,21 +233,21 @@ abstract class PlanBuilder<TParameter>(steps: List<ExecutableStep<*, TParameter>
      * Groups filters into one of two groups: Filters which can be executed together with the query and filters
      * which must be executed in Java.
      */
-    private fun groupByQueryFilter(criteria: List<SimpleExpression>): Map<Boolean, List<SimpleExpression>> {
+    private fun groupByQueryFilter(criteria: List<SimpleExpression<*>>): Map<Boolean, List<SimpleExpression<*>>> {
         return criteria.groupBy { isSupportedByQuery(it) }
     }
 
     /**
      * Indicates whether or not the given expression is an equality expression.
      */
-    private fun isEqualityExpression(expr: SimpleExpression): Boolean {
+    private fun isEqualityExpression(expr: SimpleExpression<*>): Boolean {
         return expr.operation == "="
     }
 
     /**
      * Intended to be overwritten. Indicates whether or not an expression can be added to the query.
      */
-    protected open fun isSupportedByQuery(criteria: SimpleExpression): Boolean {
+    protected open fun isSupportedByQuery(criteria: SimpleExpression<*>): Boolean {
         return true
     }
 }

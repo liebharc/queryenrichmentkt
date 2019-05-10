@@ -10,7 +10,7 @@ class Request @JvmOverloads constructor(
         /** Attributes which should be selected  */
         val attributes: List<Attribute<*>>,
         /** Filter conditions  */
-        val criteria: List<SimpleExpression> = emptyList()) : Serializable {
+        val criteria: List<SimpleExpression<*>> = emptyList()) : Serializable {
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

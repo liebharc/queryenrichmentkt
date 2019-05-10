@@ -7,7 +7,7 @@ import java.io.Serializable
  */
 class QueryFilter @JvmOverloads constructor(
         /** A filter expression  */
-        val filter: SimpleExpression,
+        val filter: SimpleExpression<*>,
         /** The query column for the filter  */
         val column: String = filter.attribute.property) {
 
