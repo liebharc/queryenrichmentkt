@@ -10,6 +10,7 @@ import java.sql.SQLException
 import java.sql.Statement
 import java.util.Arrays
 
+@Ignore
 class LoadIndicationTest {
     private var connection: Connection? = null
     private var statement: Statement? = null

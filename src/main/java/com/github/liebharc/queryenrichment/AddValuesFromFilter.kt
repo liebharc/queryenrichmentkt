@@ -9,7 +9,7 @@ package com.github.liebharc.queryenrichment
 </TAttribute> */
 internal class AddValuesFromFilter<TAttribute, TParameter> private constructor(attribute: Attribute<TAttribute>,
                                                                                /** An equality expression  */
-                                                                               private val expression: SimpleExpression) : Enrichment<TAttribute, TParameter>(attribute, Step.NO_COLUMN, Dependencies.noDependencies()) {
+                                                                               private val expression: SimpleExpression) : Enrichment<TAttribute, TParameter>(attribute, null, Dependencies.noDependencies()) {
 
     override val canBeConstant: Boolean
         get() = true

@@ -15,10 +15,10 @@ class Attribute<T>(
         /** The property of the attribute, could be a database column or an object property  */
         val property: String) : Serializable {
 
-    override fun equals(o: Any?): Boolean {
-        if (this === o) return true
-        if (o == null || javaClass != o.javaClass) return false
-        val attribute = o as Attribute<*>?
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other == null || javaClass != other.javaClass) return false
+        val attribute = other as Attribute<*>?
         return domain == attribute!!.domain && property == attribute.property
     }
 

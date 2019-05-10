@@ -38,7 +38,7 @@ class InMemoryQueryBuilder : QueryBuilder {
 
         override fun query(request: Request): QueryResult {
             val rows = database.students.map { student ->
-                steps.map { selector ->
+                steps.map<QuerySelector, Any?> { selector ->
                     val attribute = selector.attribute
                     if (attribute == Attributes.studentId) {
                         student.id

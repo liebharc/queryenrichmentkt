@@ -11,6 +11,7 @@ interface Step<TAttribute> : Serializable {
 
     /** Returns the related column/property name for a query if there is one  */
     val column: String?
+        get() = null
 
     /** Returns the attribute which is set during this step  */
     val attribute: Attribute<TAttribute>
@@ -25,10 +26,5 @@ interface Step<TAttribute> : Serializable {
      * rows in a query.
      */
     val canBeConstant: Boolean
-
-    companion object {
-
-        /** Constant which can be passed if a step has no direct relation to a column/property  */
-        val NO_COLUMN: String? = null
-    }
+        get() = false
 }

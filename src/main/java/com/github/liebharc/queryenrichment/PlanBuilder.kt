@@ -47,15 +47,15 @@ abstract class PlanBuilder<TParameter>(steps: List<ExecutableStep<*, TParameter>
         val groupedByQueryFilter = this.groupByQueryFilter(request.criteria)
         val filterSteps = this.addDependencies(
                 this.createFilterSteps(
-                        (groupedByQueryFilter as java.util.Map<Boolean, List<SimpleExpression>>).getOrDefault(false, emptyList())))
-        val sqlQueryExpressions = (groupedByQueryFilter as java.util.Map<Boolean, List<SimpleExpression>>).getOrDefault(true, emptyList())
+                        groupedByQueryFilter.getOrDefault(false, emptyList())))
+        val sqlQueryExpressions = groupedByQueryFilter.getOrDefault(true, emptyList())
         val allRequiredSteps = this.addStepsForFilters(filterSteps,
                 this.injectConstants(sqlQueryExpressions,
                         this.addDependencies(
                                 this.findRequiredSteps(sqlQueryExpressions, request))))
         val orderedSteps = this.orderSelectorsByDependencies(allRequiredSteps)
         val filters = this.translatePropertyNames(
-                (groupedByQueryFilter as java.util.Map<Boolean, List<SimpleExpression>>).getOrDefault(true, emptyList()))
+                groupedByQueryFilter.getOrDefault(true, emptyList()))
         val queryColumns = orderedSteps
                 .filter { it.column != null }
                 .map { sel -> QuerySelector(sel.attribute, sel.column!!) }

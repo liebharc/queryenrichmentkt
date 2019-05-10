@@ -14,9 +14,6 @@ open class Selector<TAttribute> @JvmOverloads constructor(
         /** A dependency, normally selectors have no dependencies  */
         override val dependencies: Dependency = Dependencies.noDependencies()) : ExecutableStep<TAttribute, Any?> {
 
-    override val canBeConstant: Boolean
-        get() = false
-
     override fun enrich(result: IntermediateResult, parameter: Any?) {
         this.enrich(result)
     }

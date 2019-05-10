@@ -13,9 +13,6 @@ internal abstract class FilterStep<TAttribute, TParameter> protected constructor
     override val dependencies: Dependency
         get() = innerStep.dependencies
 
-    override val canBeConstant: Boolean
-        get() = false
-
     abstract override fun enrich(result: IntermediateResult, parameter: TParameter)
 
     override fun toString(): String {

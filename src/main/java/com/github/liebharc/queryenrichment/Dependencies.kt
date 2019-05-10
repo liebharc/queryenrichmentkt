@@ -50,10 +50,12 @@ object Dependencies {
             }
         }
 
-        override fun isOkay(available: Set<Attribute<*>>): Boolean {
+        override fun isOkay(attributes: Set<Attribute<*>>): Boolean {
             return if (this.isEmpty) {
                 true
-            } else this.attributes.stream().anyMatch(Predicate<Attribute<*>> { available.contains(it) })
+            } else {
+                this.attributes.any { attributes.contains(it) }
+            }
 
         }
     }
@@ -68,8 +70,8 @@ object Dependencies {
             return this.attributes
         }
 
-        override fun isOkay(available: Set<Attribute<*>>): Boolean {
-            return available.containsAll(this.attributes)
+        override fun isOkay(attributes: Set<Attribute<*>>): Boolean {
+            return attributes.containsAll(this.attributes)
         }
     }
 
@@ -82,7 +84,7 @@ object Dependencies {
             return emptyList()
         }
 
-        override fun isOkay(constantAttributes: Set<Attribute<*>>): Boolean {
+        override fun isOkay(attributes: Set<Attribute<*>>): Boolean {
             return true
         }
     }
