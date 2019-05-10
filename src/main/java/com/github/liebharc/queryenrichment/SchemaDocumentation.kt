@@ -3,8 +3,7 @@ package com.github.liebharc.queryenrichment
 /**
  * A helper to draw a simple documentation for the attribute schema
  */
-class SchemaDocumentation private constructor()// Singleton class
-{
+object SchemaDocumentation {
 
     fun drawSchema(attributes: Collection<Attribute<*>>): String {
         val result = StringBuilder()
@@ -25,11 +24,5 @@ class SchemaDocumentation private constructor()// Singleton class
         }
 
         return result.toString()
-    }
-
-    companion object {
-
-        /** Singleton  */
-        val INSTANCE = SchemaDocumentation()
     }
 }

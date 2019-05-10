@@ -1,14 +1,14 @@
 package com.github.liebharc.queryenrichment
 
-import org.junit.*
-
+import org.junit.After
+import org.junit.Assert
+import org.junit.Before
+import org.junit.Test
 import java.sql.Connection
 import java.sql.DriverManager
 import java.sql.SQLException
 import java.sql.Statement
-import java.util.Arrays
-import java.util.Collections
-import java.util.stream.Collectors
+import java.util.*
 
 class H2PlanBuilderTest {
 
@@ -150,8 +150,7 @@ class H2PlanBuilderTest {
     }
 
     private fun resultToString(result: EnrichedQueryResult): String {
-        return result.results.map { row -> row.joinToString(",") { it?.toString() ?: "<null>"  } }
-                .joinToString("\n")
+        return result.results.joinToString("\n") { row -> row.joinToString(",") { it?.toString() ?: "<null>" } }
     }
 
     private fun createDefaultSelectors(): List<ExecutableStep<*, Any?>> {

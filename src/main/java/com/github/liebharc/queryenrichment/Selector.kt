@@ -1,7 +1,5 @@
 package com.github.liebharc.queryenrichment
 
-import java.util.Optional
-
 /**
  * A selector tells a [Query] which properties or columns should be selected.
  * @param <TAttribute> Attrigbute type
@@ -30,6 +28,6 @@ open class Selector<TAttribute> @JvmOverloads constructor(
 
     companion object {
 
-        private val serialVersionUID = -7538684432852388470L
+        private const val serialVersionUID = -7538684432852388470L
     }
 }

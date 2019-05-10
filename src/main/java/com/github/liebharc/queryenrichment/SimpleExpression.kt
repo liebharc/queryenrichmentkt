@@ -1,37 +1,18 @@
 package com.github.liebharc.queryenrichment
 
 import java.io.Serializable
-import java.util.Objects
 
 /**
  * A filter expression such as: a = b or a != b
  * Inspired by Hibernate, needs to be fleshed out before it is useful.
  */
-class SimpleExpression<TAttribute>(
+data class SimpleExpression<TAttribute>(
         /** The attribute which shall be filtered for  */
         val attribute: Attribute<*>,
         /** The filter expression, e.g. = or !=  */
         val operation: String,
         /** The value for the RHS of the filter expression  */
         val value: TAttribute) : Serializable {
-
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (other == null || javaClass != other.javaClass) return false
-        val that = other as SimpleExpression<*>?
-        return attribute == that!!.attribute && operation == that.operation
-    }
-
-    override fun hashCode(): Int {
-        return Objects.hash(attribute, operation)
-    }
-
-    override fun toString(): String {
-        return if (value is String) {
-            "$attribute$operation'$value'"
-        } else attribute.toString() + operation + value
-
-    }
 
     companion object {
 

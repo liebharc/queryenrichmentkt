@@ -1,7 +1,5 @@
 package com.github.liebharc.queryenrichment
 
-import java.util.Optional
-
 /**
  * An enrichment produces results by combining values from other attributes and/or other data sources.
  * @param <TAttribute> Attribute type
@@ -17,7 +15,7 @@ abstract class Enrichment<TAttribute, TParameter>(
     override val canBeConstant: Boolean
         get() = true
 
-    constructor(attribute: Attribute<TAttribute>, dependency: Dependency) : this(attribute, null, dependency) {}
+    constructor(attribute: Attribute<TAttribute>, dependency: Dependency) : this(attribute, null, dependency)
 
     abstract override fun enrich(result: IntermediateResult, parameter: TParameter)
 
@@ -31,6 +29,6 @@ abstract class Enrichment<TAttribute, TParameter>(
 
     companion object {
 
-        private val serialVersionUID = -387954492411088733L
+        private const val serialVersionUID = -387954492411088733L
     }
 }

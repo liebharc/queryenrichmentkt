@@ -3,9 +3,7 @@ package com.github.liebharc.queryenrichment
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
-
-import java.util.Arrays
-import java.util.stream.Collectors
+import java.util.*
 
 class InMemoryPlanBuilderTest {
 

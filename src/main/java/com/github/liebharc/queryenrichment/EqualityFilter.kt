@@ -1,14 +1,12 @@
 package com.github.liebharc.queryenrichment
 
-import java.util.*
-
 internal class EqualityFilter<TAttribute, TParameter>(innerStep: ExecutableStep<TAttribute, TParameter>, expression: SimpleExpression<TAttribute>) : FilterStep<TAttribute, TParameter>(innerStep, expression) {
     override val column: String?
         get() = innerStep.column
 
     override fun enrich(result: IntermediateResult, parameter: TParameter) {
         innerStep.enrich(result, parameter)
-        val value = result.get(this.attribute)
+        val value = result[this.attribute]
 
         if (value != expression.value) {
             result.stopProcessing()
@@ -23,6 +21,6 @@ internal class EqualityFilter<TAttribute, TParameter>(innerStep: ExecutableStep<
     }
 
     companion object {
-        private val serialVersionUID = 6490446172472673292L
+        private const val serialVersionUID = 6490446172472673292L
     }
 }

@@ -10,7 +10,6 @@ import java.sql.SQLException
 import java.sql.Statement
 import java.util.Arrays
 
-@Ignore
 class LoadIndicationTest {
     private var connection: Connection? = null
     private var statement: Statement? = null
@@ -76,6 +75,7 @@ class LoadIndicationTest {
     }
 
     // Getters/setters are required by JDBC template
+    @Suppress("unused")
     class StudentDAO {
         var id: Long = 0
         var firstName: String? = null
@@ -84,8 +84,8 @@ class LoadIndicationTest {
     }
 
     companion object {
-        private val RESULT_SIZE: Long = 10000
-        private val ITERATIONS: Long = 200
+        private const val RESULT_SIZE: Long = 10000
+        private const val ITERATIONS: Long = 200
 
         val studentId = SelectorBuilder(Attributes.studentId).addColumn("ID").build()
         val firstName = SelectorBuilder(Attributes.firstName).addColumn("firstName").build()

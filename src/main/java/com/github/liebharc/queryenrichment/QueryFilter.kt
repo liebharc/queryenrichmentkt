@@ -1,13 +1,11 @@
 package com.github.liebharc.queryenrichment
 
-import java.io.Serializable
-
 /**
  * A filter which is implemented by a [Query]. That is filters could also be executed during a [FilterStep].
  */
-class QueryFilter @JvmOverloads constructor(
+class QueryFilter constructor(
         /** A filter expression  */
-        val filter: SimpleExpression<*>,
+        private val filter: SimpleExpression<*>,
         /** The query column for the filter  */
         val column: String = filter.attribute.property) {
 

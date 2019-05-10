@@ -9,7 +9,7 @@ class SchemaDocumentationTest {
 
     @Test
     fun drawSchemaTest() {
-        val schema = SchemaDocumentation.INSTANCE.drawSchema(Arrays.asList(
+        val schema = SchemaDocumentation.drawSchema(Arrays.asList(
                 Attributes.studentId,
                 Attributes.firstName,
                 Attributes.lastName,

@@ -1,7 +1,6 @@
 package com.github.liebharc.queryenrichment
 
 import java.util.*
-import java.util.function.Predicate
 
 /**
  * Utility class with some default dependencies.
@@ -40,9 +39,9 @@ object Dependencies {
                 return emptyList()
             }
 
-            val any = attributes.stream().filter(Predicate<Attribute<*>> { available.contains(it) }).findAny()
-            return if (any.isPresent) {
-                listOf(any.get())
+            val any = attributes.firstOrNull { available.contains(it) }
+            return if (any != null) {
+                listOf(any)
             } else {
                 // We have no match at all, inform the caller about one of the dependencies as this is the minimum
                 // we require
@@ -88,4 +87,4 @@ object Dependencies {
             return true
         }
     }
-}// Utility class
+}

@@ -24,7 +24,7 @@ internal abstract class FilterStep<TAttribute, TParameter> protected constructor
 
     companion object {
 
-        private val serialVersionUID = 5894332892548243458L
+        private const val serialVersionUID = 5894332892548243458L
 
         fun <TAttribute, TParameter> createFilter(
                 innerStep: ExecutableStep<TAttribute, TParameter>,

@@ -17,13 +17,11 @@ class ExecutionStatistics : Serializable {
     /** Total time spent in queries and enrichment  */
     private var totalDuration: Long = 0
 
-    @Synchronized
     fun addQueryTime(duration: Long) {
         queryCount++
         queryDuration += duration
     }
 
-    @Synchronized
     fun addTotal(duration: Long) {
         totalCount++
         totalDuration += duration

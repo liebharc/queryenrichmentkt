@@ -6,6 +6,7 @@ import java.util.function.Supplier
 /**
  * Intermediate results which are created while evaluating a single row returned by the query.
  */
+@Suppress("unused", "MemberVisibilityCanBePrivate")
 class IntermediateResult {
 
     /** The query result  */

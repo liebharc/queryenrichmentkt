@@ -1,8 +1,5 @@
 package com.github.liebharc.queryenrichment
 
-import java.io.Serializable
-import java.util.Optional
-
 /**
  * Definition of the implementation of a step which is executed to get the result for a query.
  * @param <TAttribute> Attribute type

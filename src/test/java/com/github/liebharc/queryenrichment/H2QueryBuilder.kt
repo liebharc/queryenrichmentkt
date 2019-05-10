@@ -1,8 +1,9 @@
 package com.github.liebharc.queryenrichment
 
-import java.sql.*
+import java.sql.Connection
+import java.sql.PreparedStatement
+import java.sql.SQLException
 import java.util.*
-import java.util.stream.Collectors
 
 class H2QueryBuilder internal constructor(private val connection: Connection) : QueryBuilder {
 
@@ -75,15 +76,14 @@ class H2QueryBuilder internal constructor(private val connection: Connection) : 
         val lastName = SelectorBuilder(Attributes.lastName).addColumn("LAST_NAME").build()
         val studentClass = SelectorBuilder(Attributes.studentClass).addColumn("CLASS").build()
         val fullName: ExecutableStep<String, Any?> = object : ParameterlessEnrichment<String>(Attributes.fullName, Dependencies.requireAll(Attributes.firstName, Attributes.lastName)) {
-            override fun enrich(result: IntermediateResult) {
-                result.add(this, result.get(Attributes.firstName) + " " + result.get(Attributes.lastName))
-            }
+            override fun enrich(result: IntermediateResult) =
+                    result.add(this, result[Attributes.firstName] + " " + result[Attributes.lastName])
         }
 
         val classIdString: ExecutableStep<String, Any?> = object : ParameterlessEnrichment<String>(Attributes.classIdString, Dependencies.require(Attributes.studentClass)) {
             override fun enrich(result: IntermediateResult) {
                 classIdStringCalls++
-                result.add(this, "Class: " + result.get(Attributes.studentClass)!!)
+                result.add(this, "Class: " + result[Attributes.studentClass]!!)
             }
         }
     }

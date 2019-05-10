@@ -16,13 +16,9 @@ class Plan<TParameter>(
         /** Query for this plan  */
         private val query: Query) {
     /** Ordered list of per row steps  */
-    val steps: List<ExecutableStep<*, TParameter>>
+    val steps: List<ExecutableStep<*, TParameter>> = Collections.unmodifiableList(steps)
     /** Execution statistics  */
     private val statistics = ExecutionStatistics()
-
-    init {
-        this.steps = Collections.unmodifiableList(steps)
-    }
 
     fun execute(request: Request, parameter: TParameter): EnrichedQueryResult {
         val start = System.currentTimeMillis()
@@ -84,17 +80,12 @@ class Plan<TParameter>(
      * Stores the results in an object array.
      */
     private fun storeResultInObjectArray(intermediateResult: IntermediateResult): Array<Any?> {
-        var pos = 0
         val row = arrayOfNulls<Any?>(attributes.size)
-        for (attribute in attributes) {
-            row[pos] = intermediateResult.get(attribute)
-            pos++
+        for ((pos, attribute) in attributes.withIndex()) {
+            row[pos] = intermediateResult[attribute]
         }
 
         return row
     }
 
-    internal fun getSteps(): List<Step<*>> {
-        return steps
-    }
 }

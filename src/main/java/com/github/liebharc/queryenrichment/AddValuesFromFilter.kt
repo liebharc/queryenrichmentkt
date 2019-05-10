@@ -20,7 +20,7 @@ internal class AddValuesFromFilter<TAttribute, TParameter> private constructor(a
 
     companion object {
 
-        private val serialVersionUID = 2553654683345913539L
+        private const val serialVersionUID = 2553654683345913539L
 
         /**
          * Helper method to create a new instance in a way to easier deal with the Java type checker.

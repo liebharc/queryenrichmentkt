@@ -5,7 +5,7 @@ import java.util.*
 /**
  * Implements the topological sort of steps.
  */
-class TopologicalSort private constructor()// Singleton
+object TopologicalSort
 {
 
     /**
@@ -44,11 +44,5 @@ class TopologicalSort private constructor()// Singleton
 
             sorted.add(item)
         }
-    }
-
-    companion object {
-
-        /** Singleton  */
-        val INSTANCE = TopologicalSort()
     }
 }

@@ -3,7 +3,7 @@ package com.github.liebharc.queryenrichment
 /**
  * The result of [Query].
  */
-class QueryResult(
+data class QueryResult(
         /**
          * Resulting rows.
          */

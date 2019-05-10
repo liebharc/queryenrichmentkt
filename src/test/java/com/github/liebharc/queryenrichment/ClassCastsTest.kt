@@ -10,7 +10,7 @@ class ClassCastsTest {
     @Test
     fun castFloat() {
         Assert.assertEquals(1.0f, ClassCasts.castFloat(1.0f))
-        this.assertCastFailure({ ClassCasts.castFloat(1.0) })
+        this.assertCastFailure { ClassCasts.castFloat(1.0) }
     }
 
     @Test
@@ -22,14 +22,14 @@ class ClassCastsTest {
     @Test
     fun castShort() {
         Assert.assertEquals(1.toShort(), ClassCasts.castShort(1.toShort()))
-        this.assertCastFailure({ ClassCasts.castShort(1) })
+        this.assertCastFailure(cast = { ClassCasts.castShort(1) })
     }
 
     @Test
     fun castInteger() {
         Assert.assertEquals(1, ClassCasts.castInteger(1))
         Assert.assertEquals(1, ClassCasts.castInteger(1.toShort()))
-        this.assertCastFailure({ ClassCasts.castInteger(1L) })
+        this.assertCastFailure { ClassCasts.castInteger(1L) }
     }
 
     @Test

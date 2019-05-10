@@ -1,8 +1,6 @@
 package com.github.liebharc.queryenrichment
 
-import java.util.ArrayList
-import java.util.stream.Collectors
-import kotlin.math.atan
+import java.util.*
 
 class InMemoryQueryBuilder : QueryBuilder {
 
@@ -25,13 +23,6 @@ class InMemoryQueryBuilder : QueryBuilder {
             students.add(student)
         }
 
-        fun setup(vararg students: Student) {
-            this.clear()
-            for (student in students) {
-                this.add(student)
-            }
-
-        }
     }
 
     inner class Query(private val steps: List<QuerySelector>) : com.github.liebharc.queryenrichment.Query {
@@ -40,15 +31,11 @@ class InMemoryQueryBuilder : QueryBuilder {
             val rows = database.students.map { student ->
                 steps.map<QuerySelector, Any?> { selector ->
                     val attribute = selector.attribute
-                    if (attribute == Attributes.studentId) {
-                        student.id
-                    } else if (attribute == Attributes.firstName) {
-                        student.firstName
-                    } else if (attribute == Attributes.lastName) {
-                        student.lastName
-                    }
-                    else {
-                        throw IllegalArgumentException("Unknown column $selector")
+                    when (attribute) {
+                        Attributes.studentId -> student.id
+                        Attributes.firstName -> student.firstName
+                        Attributes.lastName -> student.lastName
+                        else -> throw IllegalArgumentException("Unknown column $selector")
                     }
                 }
                 .toList()
@@ -65,8 +52,8 @@ class InMemoryQueryBuilder : QueryBuilder {
         val lastName = SelectorBuilder(Attributes.lastName).addColumn("LAST_NAME").build()
         val fullName: ExecutableStep<String, Any?> = object : ParameterlessEnrichment<String>(Attributes.fullName, Dependencies.requireOneOf(Attributes.firstName, Attributes.lastName)) {
             override fun enrich(result: IntermediateResult) {
-                val firstName = result.get(Attributes.firstName)
-                val lastName = result.get(Attributes.lastName)
+                val firstName = result[Attributes.firstName]
+                val lastName = result[Attributes.lastName]
                 if (firstName != null && lastName != null) {
                     result.add(this, "$firstName $lastName")
                 } else if (firstName != null) {

@@ -1,7 +1,6 @@
 package com.github.liebharc.queryenrichment
 
 import java.io.Serializable
-import java.util.Optional
 
 /**
  * Definition of the meta data about a step which is executed to get the result for a query.

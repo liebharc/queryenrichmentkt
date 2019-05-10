@@ -1,6 +1,5 @@
 package com.github.liebharc.queryenrichment
 
-import org.w3c.dom.Attr
 import java.util.*
 
 /**
@@ -61,11 +60,11 @@ abstract class PlanBuilder<TParameter>(steps: List<ExecutableStep<*, TParameter>
                 .filter { it.column != null }
                 .map { sel -> QuerySelector(sel.attribute, sel.column!!) }
                 .toList()
-        val groupedByConstant = this.groupByConstant(orderedSteps)
+        val (notConstant, constant) = this.groupByConstant(orderedSteps)
         return Plan(
                 request.attributes,
-                groupedByConstant[true]!!,
-                groupedByConstant[false]!!,
+                constant,
+                notConstant,
                 this.queryBuilder.build(queryColumns, filters))
     }
 
@@ -103,7 +102,7 @@ abstract class PlanBuilder<TParameter>(steps: List<ExecutableStep<*, TParameter>
     /**
      * Groups the given list of steps in constant/not-constant.
      */
-    private fun groupByConstant(steps: List<ExecutableStep<*, TParameter>>): Map<Boolean, List<ExecutableStep<*, TParameter>>> {
+    private fun groupByConstant(steps: List<ExecutableStep<*, TParameter>>): Pair<List<ExecutableStep<*, TParameter>>, List<ExecutableStep<*, TParameter>>> {
         val constant = ArrayList<ExecutableStep<*, TParameter>>()
         val constantAttributes = HashSet<Attribute<*>>()
         val notConstant = ArrayList<ExecutableStep<*, TParameter>>()
@@ -119,10 +118,7 @@ abstract class PlanBuilder<TParameter>(steps: List<ExecutableStep<*, TParameter>
             }
         }
 
-        val result = HashMap<Boolean, List<ExecutableStep<*, TParameter>>>()
-        result[false] = notConstant
-        result[true] = constant
-        return result
+        return Pair(notConstant, constant)
     }
 
     /**
@@ -166,7 +162,7 @@ abstract class PlanBuilder<TParameter>(steps: List<ExecutableStep<*, TParameter>
                         )
                     }
                     else {
-                        attributeToStep.get(attr)!!
+                        attributeToStep[attr]!!
                 } }.toList()
     }
 
@@ -212,7 +208,7 @@ abstract class PlanBuilder<TParameter>(steps: List<ExecutableStep<*, TParameter>
             attributeToSelectorsWithConstants[step.attribute] = step
         }
 
-        return TopologicalSort.INSTANCE.sort(steps, attributeToSelectorsWithConstants)
+        return TopologicalSort.sort(steps, attributeToSelectorsWithConstants)
     }
 
     /**
