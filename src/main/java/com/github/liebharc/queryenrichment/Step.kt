@@ -24,7 +24,7 @@ interface Step<TAttribute> : Serializable {
      * Indicates whether or not the step is constant. Constant steps are steps which will return the same value for all
      * rows in a query.
      */
-    val isConstant: Boolean
+    val canBeConstant: Boolean
 
     companion object {
 

@@ -11,7 +11,7 @@ internal class AddValuesFromFilter<TAttribute, TParameter> private constructor(a
                                                                                /** An equality expression  */
                                                                                private val expression: SimpleExpression) : Enrichment<TAttribute, TParameter>(attribute, Step.NO_COLUMN, Dependencies.noDependencies()) {
 
-    override val isConstant: Boolean
+    override val canBeConstant: Boolean
         get() = true
 
     override fun enrich(result: IntermediateResult, parameter: TParameter) {

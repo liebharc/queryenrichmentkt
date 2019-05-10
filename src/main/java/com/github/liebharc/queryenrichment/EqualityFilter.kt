@@ -4,7 +4,7 @@ import java.util.*
 
 internal class EqualityFilter<TAttribute, TParameter>(innerStep: ExecutableStep<TAttribute, TParameter>, expression: SimpleExpression) : FilterStep<TAttribute, TParameter>(innerStep, expression) {
     override val column: String?
-        get() = null
+        get() = innerStep.column
 
     override fun enrich(result: IntermediateResult, parameter: TParameter) {
         innerStep.enrich(result, parameter)

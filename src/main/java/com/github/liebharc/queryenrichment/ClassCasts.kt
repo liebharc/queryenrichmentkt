@@ -10,7 +10,7 @@ object ClassCasts {
     /**
      * Cast the value to the given class. Also supports the most crucial widening primitive conversions.
      */
-    fun cast(clazz: Class<*>, value: Any): Any {
+    fun cast(clazz: Class<*>, value: Any?): Any? {
         if (clazz == Long::class.java) {
             return castLong(value)
         }
@@ -30,31 +30,31 @@ object ClassCasts {
     }
 
 
-    fun castFloat(value: Any): Any {
-        return castObject(Float::class.java, value)
+    fun castFloat(value: Any?): Any? {
+        return castObject(java.lang.Float::class.java, value)
     }
 
-    fun castDouble(value: Any): Any {
+    fun castDouble(value: Any?): Any? {
         return value as? Double ?: ((value as? Float)?.toDouble() ?: castObject(Double::class.java, value))
 
     }
 
-    fun castInteger(value: Any): Any {
+    fun castInteger(value: Any?): Any? {
         return value as? Int ?: ((value as? Short)?.toInt() ?: castObject(Int::class.java, value))
 
     }
 
-    fun castShort(value: Any): Any {
-        return castObject(Short::class.java, value)
+    fun castShort(value: Any?): Any? {
+        return castObject(java.lang.Short::class.java, value)
     }
 
-    fun castLong(value: Any): Any {
+    fun castLong(value: Any?): Any? {
         return value as? Long ?: ((value as? Int)?.toLong() ?: ((value as? Short)?.toLong()
                 ?: ((value as? Timestamp)?.time ?: castObject(Long::class.java, value))))
 
     }
 
-    fun castBoolean(value: Any): Any {
+    fun castBoolean(value: Any?): Any? {
         if (value is Boolean) {
             return value
         }
@@ -73,7 +73,7 @@ object ClassCasts {
 
     }
 
-    fun castObject(clazz: Class<*>, value: Any): Any {
+    fun castObject(clazz: Class<*>, value: Any?): Any? {
         return clazz.cast(value)
     }
-}// Utility class
+}

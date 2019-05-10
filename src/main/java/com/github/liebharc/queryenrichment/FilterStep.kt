@@ -1,7 +1,5 @@
 package com.github.liebharc.queryenrichment
 
-import java.util.Optional
-
 /** A step which executes a filter expression in Java  */
 internal abstract class FilterStep<TAttribute, TParameter> protected constructor(
         /** The step which produces the attribute we have to filter for  */
@@ -15,8 +13,8 @@ internal abstract class FilterStep<TAttribute, TParameter> protected constructor
     override val dependencies: Dependency
         get() = innerStep.dependencies
 
-    override val isConstant: Boolean
-        get() = innerStep.isConstant
+    override val canBeConstant: Boolean
+        get() = false
 
     abstract override fun enrich(result: IntermediateResult, parameter: TParameter)
 

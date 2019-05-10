@@ -48,7 +48,7 @@ class ClassCastsTest {
         Assert.assertEquals(true, ClassCasts.castBoolean(1.toShort()))
     }
 
-    private fun assertCastFailure(cast: () -> Any) {
+    private fun assertCastFailure(cast: () -> Any?) {
         try {
             cast()
             Assert.fail("Class cast should fail")

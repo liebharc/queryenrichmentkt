@@ -14,8 +14,8 @@ abstract class Enrichment<TAttribute, TParameter>(
         /** Dependencies of this step  */
         override val dependencies: Dependency) : ExecutableStep<TAttribute, TParameter> {
 
-    override val isConstant: Boolean
-        get() = false
+    override val canBeConstant: Boolean
+        get() = true
 
     constructor(attribute: Attribute<TAttribute>, dependency: Dependency) : this(attribute, null, dependency) {}
 

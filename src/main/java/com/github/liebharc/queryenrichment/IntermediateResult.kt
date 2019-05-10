@@ -9,7 +9,7 @@ import java.util.function.Supplier
 class IntermediateResult {
 
     /** The query result  */
-    private var queryResult: List<Any>? = null
+    private var queryResult: List<Any?>? = null
 
     /** Pointer to the next query result  */
     private var queryResultPos = 0
@@ -42,6 +42,7 @@ class IntermediateResult {
     /**
      * Returns the value of an attribute. If the attribute is a dependency of the current step then it must be present.
      */
+    @Suppress("UNCHECKED_CAST")
     operator fun <T> get(attribute: Attribute<T>): T? {
         val constant = constants[attribute] as T
         return constant ?: results[attribute] as T
@@ -68,7 +69,7 @@ class IntermediateResult {
      */
     fun addFromQuery(step: Step<*>) {
         val attribute = step.attribute
-        results[attribute] = ClassCasts.cast(step.attribute.attributeClass, queryResult!![queryResultPos])
+        results[attribute] = ClassCasts.cast(step.attribute.attributeClass, queryResult?.get(queryResultPos))
         this.nextColumn()
     }
 
@@ -155,7 +156,7 @@ class IntermediateResult {
      * Called before the next row is processed.
      * @param row Row results from a query.
      */
-    fun nextRow(row: List<Any>) {
+    fun nextRow(row: List<Any?>) {
         this.clear()
         this.queryResult = row
     }

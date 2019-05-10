@@ -47,8 +47,9 @@ class InMemoryQueryBuilder : QueryBuilder {
                     } else if (attribute == Attributes.lastName) {
                         student.lastName
                     }
-
-                    throw IllegalArgumentException("Unknown column $selector")
+                    else {
+                        throw IllegalArgumentException("Unknown column $selector")
+                    }
                 }
                 .toList()
             }.toList()

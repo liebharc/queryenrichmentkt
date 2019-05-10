@@ -1,8 +1,6 @@
 package com.github.liebharc.queryenrichment
 
 import java.util.*
-import java.util.function.Predicate
-import java.util.stream.Collectors
 
 /**
  * Creates a plan for a query. This class is intended to be subclassed so that implementors can provide their
@@ -105,10 +103,10 @@ abstract class PlanBuilder<TParameter>(steps: List<ExecutableStep<*, TParameter>
         val constantAttributes = HashSet<Attribute<*>>()
         val notConstant = ArrayList<ExecutableStep<*, TParameter>>()
         for (step in steps) {
-            if (step.isConstant && step.dependencies.isEmpty) {
+            if (step.canBeConstant && step.dependencies.isEmpty) {
                 constant.add(step)
                 constantAttributes.add(step.attribute)
-            } else if (step.column == null && step.dependencies.isOkay(constantAttributes)) {
+            } else if (step.canBeConstant && step.column == null && step.dependencies.isOkay(constantAttributes)) {
                 constant.add(step)
                 constantAttributes.add(step.attribute)
             } else {
@@ -131,15 +129,11 @@ abstract class PlanBuilder<TParameter>(steps: List<ExecutableStep<*, TParameter>
                 .groupBy { it.attribute }
 
         return steps.map { step ->
-            if (step.isConstant) {
-                step
+            val filterExpression = equalityFilters[step.attribute]?.first()
+            if (filterExpression != null) {
+                AddValuesFromFilter.create(step.attribute, filterExpression)
             } else {
-                val filterExpression = equalityFilters[step.attribute]?.first()
-                if (filterExpression != null) {
-                    AddValuesFromFilter.create(step.attribute, filterExpression)
-                } else {
-                    step
-                }
+                step
             }
         }
     }
@@ -202,9 +196,7 @@ abstract class PlanBuilder<TParameter>(steps: List<ExecutableStep<*, TParameter>
     private fun orderSelectorsByDependencies(steps: List<ExecutableStep<*, TParameter>>): List<ExecutableStep<*, TParameter>> {
         val attributeToSelectorsWithConstants = HashMap(attributeToStep)
         for (step in steps) {
-            if (step.isConstant) {
-                attributeToSelectorsWithConstants[step.attribute] = step
-            }
+            attributeToSelectorsWithConstants[step.attribute] = step
         }
 
         return TopologicalSort.INSTANCE.sort(steps, attributeToSelectorsWithConstants)

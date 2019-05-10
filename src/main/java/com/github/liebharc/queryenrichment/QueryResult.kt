@@ -7,4 +7,4 @@ class QueryResult(
         /**
          * Resulting rows.
          */
-        val rows: List<List<Any>>)
+        val rows: List<List<Any?>>)
