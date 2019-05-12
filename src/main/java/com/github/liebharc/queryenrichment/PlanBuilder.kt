@@ -110,7 +110,7 @@ abstract class PlanBuilder<TParameter>(steps: List<ExecutableStep<*, TParameter>
             if (step.canBeConstant && step.dependencies.isEmpty) {
                 constant.add(step)
                 constantAttributes.add(step.attribute)
-            } else if (step.canBeConstant && step.column == null && step.dependencies.isOkay(constantAttributes)) {
+            } else if (step.column == null && step.dependencies.isOkay(constantAttributes)) {
                 constant.add(step)
                 constantAttributes.add(step.attribute)
             } else {
