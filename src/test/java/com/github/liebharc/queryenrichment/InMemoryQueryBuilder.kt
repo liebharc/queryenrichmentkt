@@ -50,7 +50,7 @@ class InMemoryQueryBuilder : QueryBuilder {
 
         val studentId = SelectorBuilder(Attributes.studentId).addColumn("ID").build()
         val reference = SelectorBuilder(Attributes.reference).addColumn("*").build()
-        val firstName = SelectorBuilder(Attributes.firstName).addColumn("FIRST_NAME").build()
+        val firstName = SelectorOrEnrichment(Attributes.firstName, "FIRST_NAME", Attributes.reference, { std -> std.firstName })
         val lastName = SelectorBuilder(Attributes.lastName).addColumn("LAST_NAME").build()
         val fullName: ExecutableStep<String, Any?> = object : ParameterlessEnrichment<String>(Attributes.fullName, Dependencies.requireOneOf(Attributes.firstName, Attributes.lastName)) {
             override fun enrich(result: IntermediateResult) {

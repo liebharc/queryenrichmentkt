@@ -29,12 +29,19 @@ object Dependencies {
         return RequireOneOf(Arrays.asList(*attributes))
     }
 
+    /** A step with only optional dependencies  */
+    fun optional(vararg attributes: Attribute<*>): Dependency {
+        return OptionalDependency(Arrays.asList(*attributes))
+    }
+
     private class RequireOneOf constructor(private val attributes: Collection<Attribute<*>>) : Dependency {
 
         override val isEmpty: Boolean
             get() = attributes.isEmpty()
 
-        override fun getMinimalRequiredAttributes(available: Collection<Attribute<*>>): Collection<Attribute<*>> {
+        override fun getMinimalRequiredAttributes(
+                selection: Map<Attribute<*>, ExecutableStep<*, *>>,
+                available: Collection<Attribute<*>>): Collection<Attribute<*>> {
             if (this.isEmpty) {
                 return emptyList()
             }
@@ -49,7 +56,7 @@ object Dependencies {
             }
         }
 
-        override fun isOkay(attributes: Set<Attribute<*>>): Boolean {
+        override fun canBeConstant(attributes: Set<Attribute<*>>): Boolean {
             return if (this.isEmpty) {
                 true
             } else {
@@ -65,11 +72,13 @@ object Dependencies {
         override val isEmpty: Boolean
             get() = attributes.isEmpty()
 
-        override fun getMinimalRequiredAttributes(available: Collection<Attribute<*>>): Collection<Attribute<*>> {
+        override fun getMinimalRequiredAttributes(
+                selection: Map<Attribute<*>, ExecutableStep<*, *>>,
+                available: Collection<Attribute<*>>): Collection<Attribute<*>> {
             return this.attributes
         }
 
-        override fun isOkay(attributes: Set<Attribute<*>>): Boolean {
+        override fun canBeConstant(attributes: Set<Attribute<*>>): Boolean {
             return attributes.containsAll(this.attributes)
         }
     }
@@ -79,12 +88,30 @@ object Dependencies {
         override val isEmpty: Boolean
             get() = true
 
-        override fun getMinimalRequiredAttributes(available: Collection<Attribute<*>>): Collection<Attribute<*>> {
+        override fun getMinimalRequiredAttributes(
+                selection: Map<Attribute<*>, ExecutableStep<*, *>>,
+                available: Collection<Attribute<*>>): Collection<Attribute<*>> {
             return emptyList()
         }
 
-        override fun isOkay(attributes: Set<Attribute<*>>): Boolean {
+        override fun canBeConstant(attributes: Set<Attribute<*>>): Boolean {
             return true
+        }
+    }
+
+    private class OptionalDependency constructor(private val attributes: Collection<Attribute<*>>) : Dependency {
+
+        override val isEmpty: Boolean
+            get() = attributes.isEmpty()
+
+        override fun getMinimalRequiredAttributes(
+                selection: Map<Attribute<*>, ExecutableStep<*, *>>,
+                available: Collection<Attribute<*>>): Collection<Attribute<*>> {
+            return attributes.filter { atr -> attributes.contains(atr) && selection.containsKey(atr) }
+        }
+
+        override fun canBeConstant(attributes: Set<Attribute<*>>): Boolean {
+            return false
         }
     }
 }

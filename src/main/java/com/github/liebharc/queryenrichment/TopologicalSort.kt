@@ -34,7 +34,7 @@ object TopologicalSort
             visited.add(item.attribute)
 
             val dependencies = item.dependencies
-            for (dependency in dependencies.getMinimalRequiredAttributes(visited)) {
+            for (dependency in dependencies.getMinimalRequiredAttributes(attributeToSelector, visited)) {
                 val stepDependency = attributeToSelector[dependency]
                         ?: throw IllegalArgumentException("Unresolved dependency found. $item requires $dependency")
 

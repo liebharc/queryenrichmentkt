@@ -17,10 +17,12 @@ interface Dependency {
      * @return List of required attributes, this can be but don't have to be in the available list. If an attribute
      * is returned which hasn't been made available yet then the framework will try to add the required steps.
      */
-    fun getMinimalRequiredAttributes(available: Collection<Attribute<*>>): Collection<Attribute<*>>
+    fun getMinimalRequiredAttributes(
+            selection: Map<Attribute<*>, ExecutableStep<*, *>>,
+            available: Collection<Attribute<*>>): Collection<Attribute<*>>
 
     /**
      * Indicates whether or not the given list of attributes fulfills the dependency.
      */
-    fun isOkay(attributes: Set<Attribute<*>>): Boolean
+    fun canBeConstant(attributes: Set<Attribute<*>>): Boolean
 }

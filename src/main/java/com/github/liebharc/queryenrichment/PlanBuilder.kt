@@ -112,7 +112,7 @@ abstract class PlanBuilder<TParameter>(steps: List<ExecutableStep<*, TParameter>
             if (step.canBeConstant && step.dependencies.isEmpty) {
                 constant.add(step)
                 constantAttributes.add(step.attribute)
-            } else if (step.column(queryInformation) == null && step.dependencies.isOkay(constantAttributes)) {
+            } else if (step.column(queryInformation) == null && step.dependencies.canBeConstant(constantAttributes)) {
                 constant.add(step)
                 constantAttributes.add(step.attribute)
             } else {
@@ -193,7 +193,7 @@ abstract class PlanBuilder<TParameter>(steps: List<ExecutableStep<*, TParameter>
         result.add(item)
         availableAttributes.add(item.attribute)
 
-        for (dependency in item.dependencies.getMinimalRequiredAttributes(availableAttributes)) {
+        for (dependency in item.dependencies.getMinimalRequiredAttributes(attributeToStep, availableAttributes)) {
             val step = attributeToStep[dependency]
                     ?: throw IllegalArgumentException("Inconsistent selector tree, a selector contains an dependency which doesn't exist: $item requires $dependency")
 
