@@ -9,8 +9,7 @@ import java.io.Serializable
 interface Step<TAttribute> : Serializable {
 
     /** Returns the related column/property name for a query if there is one  */
-    val column: String?
-        get() = null
+    fun column(queryInformation: QueryInformation): String?
 
     /** Returns the attribute which is set during this step  */
     val attribute: Attribute<TAttribute>

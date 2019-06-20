@@ -17,5 +17,7 @@ data class Attribute<T>(
     companion object {
 
         private const val serialVersionUID = -3323488022561687505L
+
+        val reference: String = "ref"
     }
 }

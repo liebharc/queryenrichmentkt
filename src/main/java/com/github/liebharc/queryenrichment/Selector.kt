@@ -8,9 +8,11 @@ open class Selector<TAttribute> @JvmOverloads constructor(
         /** The attribute which is set with the given selector  */
         override val attribute: Attribute<TAttribute>,
         /** The column or property name which must be queried for  */
-        override val column: String?,
+        private val column: String?,
         /** A dependency, normally selectors have no dependencies  */
         override val dependencies: Dependency = Dependencies.noDependencies()) : ExecutableStep<TAttribute, Any?> {
+
+    override fun column(queryInformation: QueryInformation): String? = column
 
     override fun enrich(result: IntermediateResult, parameter: Any?) {
         this.enrich(result)

@@ -1,8 +1,8 @@
 package com.github.liebharc.queryenrichment
 
 internal class EqualityFilter<TAttribute, TParameter>(innerStep: ExecutableStep<TAttribute, TParameter>, expression: SimpleExpression<TAttribute>) : FilterStep<TAttribute, TParameter>(innerStep, expression) {
-    override val column: String?
-        get() = innerStep.column
+
+    override fun column(queryInformation: QueryInformation): String? = innerStep.column(queryInformation)
 
     override fun enrich(result: IntermediateResult, parameter: TParameter) {
         innerStep.enrich(result, parameter)

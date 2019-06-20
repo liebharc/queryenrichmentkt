@@ -54,13 +54,15 @@ abstract class PlanBuilder<TParameter>(steps: List<ExecutableStep<*, TParameter>
                         this.addDependencies(
                                 this.findRequiredSteps(sqlQueryExpressions, request))))
         val orderedSteps = this.orderSelectorsByDependencies(allRequiredSteps)
+        val queryInformation = QueryInformation(request)
         val filters = this.translatePropertyNames(
+                queryInformation,
                 groupedByQueryFilter.getOrDefault(true, emptyList()))
         val queryColumns = orderedSteps
-                .filter { it.column != null }
-                .map { sel -> QuerySelector(sel.attribute, sel.column!!) }
+                .filter { it.column(queryInformation) != null }
+                .map { sel -> QuerySelector(sel.attribute, sel.column(queryInformation)!!) }
                 .toList()
-        val (notConstant, constant) = this.groupByConstant(orderedSteps)
+        val (notConstant, constant) = this.groupByConstant(queryInformation, orderedSteps)
         return Plan(
                 request.attributes,
                 constant,
@@ -102,7 +104,7 @@ abstract class PlanBuilder<TParameter>(steps: List<ExecutableStep<*, TParameter>
     /**
      * Groups the given list of steps in constant/not-constant.
      */
-    private fun groupByConstant(steps: List<ExecutableStep<*, TParameter>>): Pair<List<ExecutableStep<*, TParameter>>, List<ExecutableStep<*, TParameter>>> {
+    private fun groupByConstant(queryInformation: QueryInformation, steps: List<ExecutableStep<*, TParameter>>): Pair<List<ExecutableStep<*, TParameter>>, List<ExecutableStep<*, TParameter>>> {
         val constant = ArrayList<ExecutableStep<*, TParameter>>()
         val constantAttributes = HashSet<Attribute<*>>()
         val notConstant = ArrayList<ExecutableStep<*, TParameter>>()
@@ -110,7 +112,7 @@ abstract class PlanBuilder<TParameter>(steps: List<ExecutableStep<*, TParameter>
             if (step.canBeConstant && step.dependencies.isEmpty) {
                 constant.add(step)
                 constantAttributes.add(step.attribute)
-            } else if (step.column == null && step.dependencies.isOkay(constantAttributes)) {
+            } else if (step.column(queryInformation) == null && step.dependencies.isOkay(constantAttributes)) {
                 constant.add(step)
                 constantAttributes.add(step.attribute)
             } else {
@@ -214,9 +216,9 @@ abstract class PlanBuilder<TParameter>(steps: List<ExecutableStep<*, TParameter>
     /**
      * Adds the column names to a filter expression.
      */
-    private fun translatePropertyNames(criteria: List<SimpleExpression<*>>): List<QueryFilter> {
+    private fun translatePropertyNames(queryInformation: QueryInformation, criteria: List<SimpleExpression<*>>): List<QueryFilter> {
         return criteria.map { expr ->
-            val selector = attributeToStep[expr.attribute]?.column
+            val selector = attributeToStep[expr.attribute]?.column(queryInformation)
             if (selector != null) {
                 QueryFilter(expr, selector)
             } else {

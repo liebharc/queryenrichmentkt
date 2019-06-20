@@ -8,12 +8,14 @@ abstract class Enrichment<TAttribute, TParameter>(
         /** The attribute which is set by this step  */
         override val attribute: Attribute<TAttribute>,
         /** Optional: Query column, most sof the time this value should be null as most enrichment don't directly query  */
-        override val column: String?,
+        private val column: String?,
         /** Dependencies of this step  */
         override val dependencies: Dependency) : ExecutableStep<TAttribute, TParameter> {
 
     override val canBeConstant: Boolean
         get() = true
+
+    override fun column(queryInformation: QueryInformation) = column
 
     constructor(attribute: Attribute<TAttribute>, dependency: Dependency) : this(attribute, null, dependency)
 
