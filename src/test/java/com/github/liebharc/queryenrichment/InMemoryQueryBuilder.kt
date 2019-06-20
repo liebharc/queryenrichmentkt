@@ -35,6 +35,7 @@ class InMemoryQueryBuilder : QueryBuilder {
                         Attributes.studentId -> student.id
                         Attributes.firstName -> student.firstName
                         Attributes.lastName -> student.lastName
+                        Attributes.reference -> student
                         else -> throw IllegalArgumentException("Unknown column $selector")
                     }
                 }
@@ -48,6 +49,7 @@ class InMemoryQueryBuilder : QueryBuilder {
         val database = Database()
 
         val studentId = SelectorBuilder(Attributes.studentId).addColumn("ID").build()
+        val reference = SelectorBuilder(Attributes.reference).addColumn("*").build()
         val firstName = SelectorBuilder(Attributes.firstName).addColumn("FIRST_NAME").build()
         val lastName = SelectorBuilder(Attributes.lastName).addColumn("LAST_NAME").build()
         val fullName: ExecutableStep<String, Any?> = object : ParameterlessEnrichment<String>(Attributes.fullName, Dependencies.requireOneOf(Attributes.firstName, Attributes.lastName)) {

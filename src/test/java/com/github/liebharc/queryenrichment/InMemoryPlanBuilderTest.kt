@@ -130,6 +130,21 @@ class InMemoryPlanBuilderTest {
         Assert.assertEquals(1, result.results.size.toLong())
     }
 
+    @Test
+    fun referenceTest() {
+        val student = Student(10, "David", "Tenant")
+        InMemoryQueryBuilder.database.add(student)
+        val steps = listOf(InMemoryQueryBuilder.reference)
+
+        val planBuilder = InMemoryPlanBuilder(steps)
+
+        val request = Request(Arrays.asList(Attributes.reference))
+        val plan = planBuilder.build(request)
+        val result = plan.execute(request, null)
+        val firstRow = result.results[0]
+        Assert.assertEquals(student, firstRow[0])
+    }
+
     private fun createDefaultSteps(): List<ExecutableStep<*, Any?>> {
         return listOf(
                 InMemoryQueryBuilder.studentId,

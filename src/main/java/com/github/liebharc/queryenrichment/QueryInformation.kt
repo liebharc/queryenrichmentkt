@@ -5,4 +5,5 @@ package com.github.liebharc.queryenrichment
  */
 class QueryInformation(request: Request) {
 
+    val hasReference: Boolean = request.attributes.any { atr -> atr.property == Attribute.reference }
 }
