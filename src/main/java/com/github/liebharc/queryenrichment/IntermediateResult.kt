@@ -169,6 +169,15 @@ class IntermediateResult {
     }
 
     /**
+     * Creates a copy of this result. The copy is empty except for the constant values.
+     */
+    fun copy(): IntermediateResult {
+        var result = IntermediateResult()
+        result.constants = constants;
+        return result;
+    }
+
+    /**
      * Called by filters to stop the processing of a row.
      */
     fun stopProcessing() {

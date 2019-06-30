@@ -27,17 +27,29 @@ class Plan<TParameter>(
             statistics.addQueryTime(System.currentTimeMillis() - start)
             val rows = queryResult.rows
             val results = ArrayList<Array<Any?>>()
-            val intermediateResult = IntermediateResult()
+            val constantResult = IntermediateResult()
+
+            val batchSize = Math.min(20, rows.size)
 
             // determine constants once at the beginning
-            if (this.processConstants(intermediateResult, parameter)) {
+            if (this.processConstants(constantResult, parameter)) {
                 return EnrichedQueryResult(attributes, results.toTypedArray())
             }
 
-            for (row in rows) {
-                intermediateResult.nextRow(row)
-                if (this.processRow(intermediateResult, parameter)) {
-                    results.add(this.storeResultInObjectArray(intermediateResult))
+            val intermediateResults = List(batchSize) { _ -> constantResult.copy() }
+
+            for (batch in rows.asSequence().batch(batchSize)) {
+                val zip = batch.zip(intermediateResults)
+                for ((row, result) in zip) {
+                    result.nextRow(row)
+                }
+
+                val currentBatchResults = intermediateResults.take(zip.size)
+                this.processRow(currentBatchResults, parameter)
+                for (result in currentBatchResults) {
+                    if (result.isContinueProcessing) {
+                        results.add(this.storeResultInObjectArray(result))
+                    }
                 }
             }
 
@@ -51,8 +63,9 @@ class Plan<TParameter>(
      * Executes all constants steps and then marks the result as constant.
      */
     private fun processConstants(intermediateResult: IntermediateResult, parameter: TParameter): Boolean {
+        val singleElementBatch = listOf(intermediateResult)
         for (step in constants) {
-            step.enrich(intermediateResult, parameter)
+            step.enrichBatch(singleElementBatch, parameter)
             if (!intermediateResult.isContinueProcessing) {
                 return true
             }
@@ -65,15 +78,10 @@ class Plan<TParameter>(
     /**
      * Processes all per row steps. Returns false if the row should be filtered out.
      */
-    private fun processRow(intermediateResult: IntermediateResult, parameter: TParameter): Boolean {
+    private fun processRow(intermediateResults: List<IntermediateResult>, parameter: TParameter) {
         for (step in steps) {
-            step.enrich(intermediateResult, parameter)
-            if (!intermediateResult.isContinueProcessing) {
-                return false
-            }
+            step.enrichBatch(intermediateResults, parameter)
         }
-
-        return true
     }
 
     /**
@@ -88,4 +96,20 @@ class Plan<TParameter>(
         return row
     }
 
+    /**
+     * Batches a sequence.
+     */
+    fun <T> Sequence<T>.batch(n: Int): Sequence<List<T>> {
+        return BatchingSequence(this, n)
+    }
+
+    private class BatchingSequence<T>(val source: Sequence<T>, val batchSize: Int) : Sequence<List<T>> {
+        override fun iterator(): Iterator<List<T>> = object : AbstractIterator<List<T>>() {
+            val iterate = if (batchSize > 0) source.iterator() else emptyList<T>().iterator()
+            override fun computeNext() {
+                if (iterate.hasNext()) setNext(iterate.asSequence().take(batchSize).toList())
+                else done()
+            }
+        }
+    }
 }
