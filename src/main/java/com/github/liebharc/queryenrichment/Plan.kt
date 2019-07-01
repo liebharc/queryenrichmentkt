@@ -36,7 +36,7 @@ class Plan<TParameter>(
                 return EnrichedQueryResult(attributes, results.toTypedArray())
             }
 
-            val intermediateResults = List(batchSize) { _ -> constantResult.copy() }
+            val intermediateResults = List(batchSize) { i -> if (i == 0) constantResult else constantResult.copy() }
 
             for (batch in rows.asSequence().batch(batchSize)) {
                 val zip = batch.zip(intermediateResults)
@@ -44,9 +44,10 @@ class Plan<TParameter>(
                     result.nextRow(row)
                 }
 
-                val currentBatchResults = intermediateResults.take(zip.size)
-                this.processRow(currentBatchResults, parameter)
-                for (result in currentBatchResults) {
+                // An active result is a result which hasn't been filtered out
+                val activeResults = MutableList(zip.size, {i -> intermediateResults.get(i)})
+                this.processRow(activeResults, parameter)
+                for (result in activeResults) {
                     if (result.isContinueProcessing) {
                         results.add(this.storeResultInObjectArray(result))
                     }
@@ -78,9 +79,10 @@ class Plan<TParameter>(
     /**
      * Processes all per row steps. Returns false if the row should be filtered out.
      */
-    private fun processRow(intermediateResults: List<IntermediateResult>, parameter: TParameter) {
+    private fun processRow(activeResults: MutableList<IntermediateResult>, parameter: TParameter) {
         for (step in steps) {
-            step.enrichBatch(intermediateResults, parameter)
+            step.enrichBatch(activeResults, parameter)
+            activeResults.retainAll { it.isContinueProcessing }
         }
     }
 
