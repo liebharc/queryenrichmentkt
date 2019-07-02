@@ -38,6 +38,7 @@ class Plan<TParameter>(
 
             val intermediateResults = List(batchSize) { i -> if (i == 0) constantResult else constantResult.copy() }
 
+            val activeResults = MutableList(batchSize, {_ -> constantResult })
             for (batch in rows.asSequence().batch(batchSize)) {
                 val zip = batch.zip(intermediateResults)
                 for ((row, result) in zip) {
@@ -45,7 +46,8 @@ class Plan<TParameter>(
                 }
 
                 // An active result is a result which hasn't been filtered out
-                val activeResults = MutableList(zip.size, {i -> intermediateResults.get(i)})
+                activeResults.clear()
+                activeResults.addAll(intermediateResults.take(zip.size))
                 this.processRow(activeResults, parameter)
                 for (result in activeResults) {
                     if (result.isContinueProcessing) {
