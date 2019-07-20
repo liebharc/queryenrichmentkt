@@ -7,6 +7,7 @@ import org.h2.message.DbException;
 import org.h2.table.Column;
 import org.h2.value.DataType;
 import org.h2.value.Value;
+import org.h2.value.ValueLong;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -95,10 +96,13 @@ public class CombinedCacheMetaData {
         return DataType.convertToValue(session, columnValue, column.getType().getValueType());
     }
 
-
-    public Value[] getRow(Value indexValue, Session session) {
+    public Value[] getRowOrNull(Value indexValue, Session session) {
         final Object value = this.getCache().getIfPresent(
                 indexColumn.convert(indexValue).getObject());
+        if (value == null) {
+            return null;
+        }
+
         Value[] values = new Value[this.getRowSize()];
         values[0] = indexValue;
         ArrayList<Column> columns = this.getAllColumns();
@@ -122,6 +126,22 @@ public class CombinedCacheMetaData {
 
             return values;
         }).iterator();
+    }
+
+    public Iterator<Value[]> getRowsInRange(Session session, Value firstValue, Value lastValue) {
+        ValueLong one = ValueLong.get(1);
+        Value value = firstValue;
+        final List<Value[]> result = new ArrayList<>();
+        while (!value.equals(lastValue)) {
+            Value[] row = this.getRowOrNull(value, session);
+            if (row != null) {
+                result.add(row);
+            }
+
+            value = value.add(one);
+        }
+
+        return result.iterator();
     }
 
     public CreateTableData getTableData() {

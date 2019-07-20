@@ -41,6 +41,11 @@ class CacheTableComplexValueTest : ResultSetAssertions() {
         var result = consume(statement!!.executeQuery("SELECT * FROM STUDENT WHERE ID = 10"))
         assertEquals(listOf(
                 listOf("10", "David", "Tenant")), result)
+
+        result = consume(statement!!.executeQuery("SELECT * FROM STUDENT WHERE ID > 5 AND ID < 15"))
+        assertEquals(listOf(
+                listOf("10", "David", "Tenant"),
+                listOf("11", "Matt", "Smith")), result)
     }
 
     @Test

@@ -1,6 +1,5 @@
 package com.github.liebharc.cachetable;
 
-import com.google.common.cache.Cache;
 import kotlin.NotImplementedError;
 import org.h2.command.dml.AllColumnsForPlan;
 import org.h2.engine.Mode;
@@ -15,10 +14,9 @@ import org.h2.table.Column;
 import org.h2.table.IndexColumn;
 import org.h2.table.TableFilter;
 import org.h2.value.*;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.Map;
 
 public class CacheTableHashIndex extends BaseIndex {
 
@@ -28,6 +26,7 @@ public class CacheTableHashIndex extends BaseIndex {
     private final int indexColumn;
     private final CacheTable tableData;
     private final CombinedCacheMetaData metaInfo;
+    private final static ArrayList<Value[]> emptyResult = new ArrayList<>();
 
     public CacheTableHashIndex(
             CacheTable table,
@@ -67,8 +66,20 @@ public class CacheTableHashIndex extends BaseIndex {
         if (first == null || last == null) {
             return findAll(session);
         }
-        Value v = first.getValue(indexColumn);
-        if (v == ValueNull.INSTANCE
+
+        Value firstValue = first.getValue(indexColumn);
+        Value lastValue = last.getValue(indexColumn);
+
+        if (firstValue.equals(lastValue)) {
+            return findSingleValue(session, firstValue);
+        }
+
+        return findRangeValue(session, firstValue, lastValue);
+    }
+
+    @NotNull
+    private Cursor findSingleValue(Session session, Value firstValue) {
+        if (firstValue == ValueNull.INSTANCE
                 && database.getMode().uniqueIndexNullsHandling != Mode.UniqueIndexNullsHandling.FORBID_ANY_DUPLICATES) {
             //return new NonUniqueHashCursor(session, tableData, nullRows);
             throw new NotImplementedError("");
@@ -79,9 +90,18 @@ public class CacheTableHashIndex extends BaseIndex {
          * case we need to convert, otherwise the HashMap will not find the
          * result.
          */
-        v = v.convertTo(tableData.getColumn(indexColumn).getType(), database.getMode(), null);
-        Value[] values = metaInfo.getRow(v, session);
+        firstValue = firstValue.convertTo(tableData.getColumn(indexColumn).getType(), database.getMode(), null);
+        Value[] values = metaInfo.getRowOrNull(firstValue, session);
+        if (values == null) {
+            return new CacheCursor(emptyResult.iterator());
+        }
         return new SingleRowCursor(new RowImpl(values, Row.MEMORY_CALCULATE));
+    }
+
+    private Cursor findRangeValue(Session session, Value firstValue, Value lastValue) {
+        firstValue = firstValue.convertTo(tableData.getColumn(indexColumn).getType(), database.getMode(), null);
+        lastValue = lastValue.convertTo(tableData.getColumn(indexColumn).getType(), database.getMode(), null);
+        return new CacheCursor(metaInfo.getRowsInRange(session, firstValue, lastValue));
     }
 
     private Cursor findAll(Session session) {
