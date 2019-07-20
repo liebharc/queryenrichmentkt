@@ -15,6 +15,8 @@ import org.h2.table.Column
 import org.h2.table.IndexColumn
 import org.h2.table.Table
 import org.h2.table.TableFilter
+import org.h2.value.ValueLong
+import org.h2.value.ValueString
 import java.lang.StringBuilder
 import java.util.ArrayList
 
@@ -89,7 +91,7 @@ class CacheTableIndex(val cache: Cache<Long, String>, val table: CacheTable) : I
         if (first != null && last != null && first.getValue(0).`object` == last.getValue(0).`object` ) {
             val key = last.getValue(0).`object` as Int
             val longKey = key.toLong()
-            return SingleRowCursor(RowImpl(arrayOf(CacheValue(longKey), CacheValue(cache.getIfPresent(longKey)!!)), 0))
+            return SingleRowCursor(RowImpl(arrayOf(ValueLong.get(longKey), ValueString.get(cache.getIfPresent(longKey)!!)), 0))
         }
 
         return CacheCursor(cache.asMap().entries.iterator())
@@ -124,11 +126,11 @@ class CacheTableIndex(val cache: Cache<Long, String>, val table: CacheTable) : I
     }
 
     override fun update(session: Session?, oldRow: Row?, newRow: Row?) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        // Cache updates are not supported
     }
 
     override fun add(session: Session?, row: Row?) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        // Cache updates are not supported
     }
 
     override fun getCreateSQL(): String {
@@ -156,7 +158,7 @@ class CacheTableIndex(val cache: Cache<Long, String>, val table: CacheTable) : I
     }
 
     override fun getDropSQL(): String {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        return "Drop caches is not allowed"
     }
 
     override fun isFirstColumn(column: Column?): Boolean {

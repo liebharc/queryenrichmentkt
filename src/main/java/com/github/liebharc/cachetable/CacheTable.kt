@@ -2,7 +2,6 @@ package com.github.liebharc.cachetable
 
 
 import com.google.common.cache.Cache
-import com.google.common.cache.CacheBuilder
 import org.h2.command.ddl.CreateTableData
 import org.h2.engine.Session
 import org.h2.index.Index
@@ -12,18 +11,36 @@ import org.h2.table.IndexColumn
 import org.h2.table.Table
 import org.h2.table.TableType
 import java.util.*
+import kotlin.reflect.KClass
 
 class CacheTable(data: CreateTableData) : Table(data.schema, data.id, data.tableName, false, false) {
 
-    private val cache: Cache<Long, String> = CacheBuilder.newBuilder().build<Long, String>()
+    companion object {
+        private val caches: MutableMap<Any, CacheMetaInfo<out Any, out Any>> = HashMap()
+
+        fun<K: Any, V: Any> register(keyClass: KClass<K>, valueClass: KClass<V>, name: String, cache: Cache<K, V>) {
+            caches.put(name, CacheMetaInfo(keyClass, valueClass, cache))
+        }
+
+        fun<K: Any, V: Any> find(name: String, keyClass: KClass<K>, valueClass: KClass<V>): Cache<K, V> {
+            val metaInfo = caches.get(name)!!
+            return metaInfo.cache as Cache<K, V>;
+        }
+    }
+
+    private val cache: Cache<Long, String> = find(data.tableName, Long::class, String::class)
 
     init {
         setColumns(data.columns.toTypedArray())
-        cache.put(1, "Test")
-        cache.put(2, "Test2")
     }
 
-    private val index = CacheTableIndex(cache, this)
+    private val index = CacheTableHashIndex(
+            this,
+            0,
+            "Cache",
+            IndexColumn.wrap(arrayOf(data.columns[0])),
+            IndexType.createUnique(false, true),
+            cache)
 
     private val indexes = ArrayList<Index>(Arrays.asList(index))
 
