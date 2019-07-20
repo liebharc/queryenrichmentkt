@@ -6,6 +6,11 @@ import com.google.common.cache.CacheBuilder
 import org.junit.*
 import java.sql.*
 import java.util.ArrayList
+import java.io.ObjectInputStream
+import java.io.ObjectInput
+import java.io.ByteArrayInputStream
+
+
 
 class CacheTableReferenceTest : ResultSetAssertions() {
     private var connection: Connection? = null
@@ -21,7 +26,7 @@ class CacheTableReferenceTest : ResultSetAssertions() {
         cache!!.put(11, Student(11, "Matt", "Smith"))
         connection = DriverManager.getConnection("jdbc:h2:mem:test", "sa", "")
         statement = connection!!.createStatement()
-        statement!!.execute("CREATE TABLE STUDENT ( ID bigint NOT NULL, FIRSTNAME varchar(255), LASTNAME varchar(255))\n" +
+        statement!!.execute("CREATE TABLE STUDENT ( ID bigint NOT NULL, REF OTHER)\n" +
                 "    ENGINE \"com.github.liebharc.cachetable.CacheTableEngine\";")
     }
 
@@ -33,7 +38,13 @@ class CacheTableReferenceTest : ResultSetAssertions() {
     }
 
     @Test
-    @Ignore
     fun selectReference() {
+        var result = consume(statement!!.executeQuery("SELECT * FROM STUDENT WHERE ID = 10"))
+        Assert.assertEquals(1, result.size);
+        Assert.assertEquals(10L, result.get(0).get(0));
+        val bis = ByteArrayInputStream(result.get(0).get(1) as ByteArray);
+        val input = ObjectInputStream(bis)
+        val student = input.readObject() as Student
+        Assert.assertEquals(Student(10, "David", "Tenant"), student);
     }
 }

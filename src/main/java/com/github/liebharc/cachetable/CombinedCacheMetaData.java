@@ -8,6 +8,9 @@ import org.h2.table.Column;
 import org.h2.value.DataType;
 import org.h2.value.Value;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
@@ -49,7 +52,15 @@ public class CombinedCacheMetaData {
     }
     public Object getRawValue(Column column, Object entry) {
         if (column.getName().equals(REF_NAME)) {
-            return entry;
+            try {
+                ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                ObjectOutputStream out = new ObjectOutputStream(bos);
+                out.writeObject(entry);
+                out.close();
+                return bos.toByteArray();
+            } catch (IOException e) {
+                DbException.throwInternalError(e.getMessage());
+            }
         }
 
         if (columnToMethod == null) {
