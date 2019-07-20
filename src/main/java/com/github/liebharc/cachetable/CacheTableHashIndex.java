@@ -13,14 +13,12 @@ import org.h2.result.SearchRow;
 import org.h2.result.SortOrder;
 import org.h2.table.Column;
 import org.h2.table.IndexColumn;
-import org.h2.table.PageStoreTable;
 import org.h2.table.TableFilter;
 import org.h2.value.*;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
-import java.util.TreeMap;
 
 public class CacheTableHashIndex extends BaseIndex {
 
@@ -29,7 +27,7 @@ public class CacheTableHashIndex extends BaseIndex {
      */
     private final int indexColumn;
     private final CacheTable tableData;
-    private final Cache<Long, String> cache;
+    private final CombinedCacheMetaData metaInfo;
 
     public CacheTableHashIndex(
             CacheTable table,
@@ -37,9 +35,9 @@ public class CacheTableHashIndex extends BaseIndex {
             String indexName,
             IndexColumn[] columns,
             IndexType indexType,
-            Cache<Long, String> cache) {
+            CombinedCacheMetaData metaInfo) {
         super(table, id, indexName, columns, indexType);
-        this.cache = cache;
+        this.metaInfo = metaInfo;
         Column column = columns[0].column;
         indexColumn = column.getColumnId();
         this.tableData = table;
@@ -56,12 +54,12 @@ public class CacheTableHashIndex extends BaseIndex {
 
     @Override
     public void add(Session session, Row row) {
-        // Changes to the cache are not supported
+        // Changes to the metaInfo are not supported
     }
 
     @Override
     public void remove(Session session, Row row) {
-        // Changes to the cache are not supported
+        // Changes to the metaInfo are not supported
     }
 
     @Override
@@ -82,12 +80,12 @@ public class CacheTableHashIndex extends BaseIndex {
          * result.
          */
         v = v.convertTo(tableData.getColumn(indexColumn).getType(), database.getMode(), null);
-        final String value = cache.getIfPresent(v.getLong());
-        return new SingleRowCursor(new RowImpl(new Value[] { v, ValueString.get(value) }, 1));
+        Value[] values = metaInfo.getRow(v, session);
+        return new SingleRowCursor(new RowImpl(values, Row.MEMORY_CALCULATE));
     }
 
     private Cursor findAll(Session session) {
-        return new CacheCursor(cache.asMap().entrySet().iterator());
+        return new CacheCursor(metaInfo.getAllRows(session));
     }
 
     @Override
@@ -97,7 +95,7 @@ public class CacheTableHashIndex extends BaseIndex {
 
     @Override
     public long getRowCountApproximation() {
-        return cache.size();
+        return metaInfo.getCache().size();
     }
 
     @Override

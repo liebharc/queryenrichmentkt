@@ -16,19 +16,18 @@ import kotlin.reflect.KClass
 class CacheTable(data: CreateTableData) : Table(data.schema, data.id, data.tableName, false, false) {
 
     companion object {
-        private val caches: MutableMap<Any, CacheMetaInfo<out Any, out Any>> = HashMap()
+        private val caches: MutableMap<Any, CacheMetaInfo> = HashMap()
 
         fun<K: Any, V: Any> register(keyClass: KClass<K>, valueClass: KClass<V>, name: String, cache: Cache<K, V>) {
-            caches.put(name, CacheMetaInfo(keyClass, valueClass, cache))
+            caches.put(name, CacheMetaInfo(keyClass.java, valueClass.java, cache))
         }
 
-        fun<K: Any, V: Any> find(name: String, keyClass: KClass<K>, valueClass: KClass<V>): Cache<K, V> {
-            val metaInfo = caches.get(name)!!
-            return metaInfo.cache as Cache<K, V>;
+        fun find(name: String): CacheMetaInfo {
+            return caches.get(name)!!
         }
     }
 
-    private val cache: Cache<Long, String> = find(data.tableName, Long::class, String::class)
+    private val metaInfo: CombinedCacheMetaData = CombinedCacheMetaData(data, find(data.tableName))
 
     init {
         setColumns(data.columns.toTypedArray())
@@ -40,7 +39,7 @@ class CacheTable(data: CreateTableData) : Table(data.schema, data.id, data.table
             "Cache",
             IndexColumn.wrap(arrayOf(data.columns[0])),
             IndexType.createUnique(false, true),
-            cache)
+            metaInfo)
 
     private val indexes = ArrayList<Index>(Arrays.asList(index))
 
@@ -70,7 +69,7 @@ class CacheTable(data: CreateTableData) : Table(data.schema, data.id, data.table
     }
 
     override fun getDiskSpaceUsed(): Long {
-        return cache.size()
+        return metaInfo.cache.size()
     }
 
     override fun isDeterministic(): Boolean {
@@ -88,7 +87,7 @@ class CacheTable(data: CreateTableData) : Table(data.schema, data.id, data.table
     }
 
     override fun getRowCountApproximation(): Long {
-        return cache.size()
+        return metaInfo.cache.size()
     }
 
     override fun isLockedExclusively(): Boolean {
@@ -100,7 +99,7 @@ class CacheTable(data: CreateTableData) : Table(data.schema, data.id, data.table
     }
 
     override fun getRowCount(session: Session?): Long {
-        return cache.size()
+        return metaInfo.cache.size()
     }
 
     override fun canGetRowCount(): Boolean {
@@ -108,7 +107,7 @@ class CacheTable(data: CreateTableData) : Table(data.schema, data.id, data.table
     }
 
     override fun getCreateSQL(): String {
-        return "Select from cache"
+        return "Select from metaInfo"
     }
 
     override fun getDropSQL(): String {

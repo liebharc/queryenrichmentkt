@@ -9,7 +9,7 @@ import org.junit.Test
 import java.sql.*
 import java.util.ArrayList
 
-class CacheTableTest : ResultSetAssertions() {
+class CacheTableStringValueTest : ResultSetAssertions() {
     private var connection: Connection? = null
     private var statement: Statement? = null
     private var cache: Cache<Long, String>? = null
@@ -24,7 +24,7 @@ class CacheTableTest : ResultSetAssertions() {
         cache!!.put(3, "Test3")
         connection = DriverManager.getConnection("jdbc:h2:mem:test", "sa", "")
         statement = connection!!.createStatement()
-        statement!!.execute("CREATE TABLE CLASS ( ID int(11) NOT NULL, DESCRIPTION varchar(255))\n" +
+        statement!!.execute("CREATE TABLE CLASS ( ID bigint NOT NULL, DESCRIPTION varchar(255))\n" +
                 "    ENGINE \"com.github.liebharc.cachetable.CacheTableEngine\";")
     }
 
@@ -55,6 +55,11 @@ class CacheTableTest : ResultSetAssertions() {
         result = consume(statement!!.executeQuery("SELECT * FROM CLASS ORDER BY ID"))
         assertEquals(listOf(
                 listOf(1L, "Test"),
+                listOf(2L, "Test2"),
+                listOf(3L, "Test3"),
+                listOf(4L, "Test4")), result)
+        result = consume(statement!!.executeQuery("SELECT * FROM CLASS WHERE ID > 1 ORDER BY ID"))
+        assertEquals(listOf(
                 listOf(2L, "Test2"),
                 listOf(3L, "Test3"),
                 listOf(4L, "Test4")), result)
