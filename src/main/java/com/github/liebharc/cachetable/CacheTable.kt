@@ -16,13 +16,17 @@ import kotlin.reflect.KClass
 class CacheTable(data: CreateTableData) : Table(data.schema, data.id, data.tableName, false, false) {
 
     companion object {
-        private val caches: MutableMap<Any, CacheMetaInfo> = HashMap()
+        private val caches: MutableMap<Any, ICacheMetaInfo> = HashMap()
 
         fun<K: Any, V: Any> register(keyClass: KClass<K>, valueClass: KClass<V>, name: String, cache: Cache<K, V>) {
-            caches.put(name, CacheMetaInfo(keyClass.java, valueClass.java, cache))
+            caches.put(name, SingleIdCacheMetaInfo(keyClass.java, valueClass.java, cache))
         }
 
-        fun find(name: String): CacheMetaInfo {
+        fun register(name: String, metaInfo: ICacheMetaInfo) {
+            caches.put(name, metaInfo)
+        }
+
+        fun find(name: String): ICacheMetaInfo {
             return caches.get(name)!!
         }
     }
@@ -37,7 +41,7 @@ class CacheTable(data: CreateTableData) : Table(data.schema, data.id, data.table
             this,
             0,
             "Cache",
-            IndexColumn.wrap(arrayOf(data.columns[0])),
+            IndexColumn.wrap(data.columns.take(metaInfo.numberOfIndexColumns.toInt()).toTypedArray()),
             IndexType.createUnique(false, true),
             metaInfo)
 
@@ -69,7 +73,7 @@ class CacheTable(data: CreateTableData) : Table(data.schema, data.id, data.table
     }
 
     override fun getDiskSpaceUsed(): Long {
-        return metaInfo.cache.size()
+        return metaInfo.rowSize
     }
 
     override fun isDeterministic(): Boolean {
@@ -87,7 +91,7 @@ class CacheTable(data: CreateTableData) : Table(data.schema, data.id, data.table
     }
 
     override fun getRowCountApproximation(): Long {
-        return metaInfo.cache.size()
+        return metaInfo.rowSize
     }
 
     override fun isLockedExclusively(): Boolean {
@@ -99,7 +103,7 @@ class CacheTable(data: CreateTableData) : Table(data.schema, data.id, data.table
     }
 
     override fun getRowCount(session: Session?): Long {
-        return metaInfo.cache.size()
+        return metaInfo.rowSize
     }
 
     override fun canGetRowCount(): Boolean {

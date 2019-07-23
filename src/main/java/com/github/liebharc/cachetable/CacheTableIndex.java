@@ -17,14 +17,16 @@ import org.h2.value.*;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class CacheTableIndex extends BaseIndex {
 
     /**
      * The index of the indexed column.
      */
-    private final int indexColumn;
-    private final CacheTable tableData;
+    private final List<Column> indexColumn;
     private final CombinedCacheMetaData metaInfo;
     private final static ArrayList<Value[]> emptyResult = new ArrayList<>();
 
@@ -37,9 +39,11 @@ public class CacheTableIndex extends BaseIndex {
             CombinedCacheMetaData metaInfo) {
         super(table, id, indexName, columns, indexType);
         this.metaInfo = metaInfo;
-        Column column = columns[0].column;
-        indexColumn = column.getColumnId();
-        this.tableData = table;
+        indexColumn =
+                Arrays.stream(columns)
+                        .limit(metaInfo.getNumberOfIndexColumns())
+                        .map(column -> column.column)
+                        .collect(Collectors.toList());
         reset();
     }
 
@@ -67,8 +71,8 @@ public class CacheTableIndex extends BaseIndex {
             return findAll(session);
         }
 
-        Value firstValue = first.getValue(indexColumn);
-        Value lastValue = last.getValue(indexColumn);
+        List<Value> firstValue = getValue(first);
+        List<Value> lastValue = getValue(last);
 
         if (firstValue.equals(lastValue)) {
             return findSingleValue(session, firstValue);
@@ -77,8 +81,17 @@ public class CacheTableIndex extends BaseIndex {
         return findRangeValue(session, firstValue, lastValue);
     }
 
+    private List<Value> getValue(SearchRow row) {
+        return indexColumn.stream()
+                .map(col -> {
+                    Value value = row.getValue(col.getColumnId());
+                    return value != null ? value.convertTo(col.getType(), database.getMode(), null) : null;
+                })
+                .collect(Collectors.toList());
+    }
+
     @NotNull
-    private Cursor findSingleValue(Session session, Value firstValue) {
+    private Cursor findSingleValue(Session session, List<Value> firstValue) {
         if (firstValue == ValueNull.INSTANCE
                 && database.getMode().uniqueIndexNullsHandling != Mode.UniqueIndexNullsHandling.FORBID_ANY_DUPLICATES) {
             //return new NonUniqueHashCursor(session, tableData, nullRows);
@@ -90,17 +103,14 @@ public class CacheTableIndex extends BaseIndex {
          * case we need to convert, otherwise the HashMap will not find the
          * result.
          */
-        firstValue = firstValue.convertTo(tableData.getColumn(indexColumn).getType(), database.getMode(), null);
-        Value[] values = metaInfo.getRowOrNull(firstValue, session);
+        List<Value[]> values = metaInfo.getRowOrNull(firstValue, session);
         if (values == null) {
             return new CacheCursor(emptyResult.iterator());
         }
-        return new SingleRowCursor(new RowImpl(values, Row.MEMORY_CALCULATE));
+        return new CacheCursor(values.iterator());
     }
 
-    private Cursor findRangeValue(Session session, Value firstValue, Value lastValue) {
-        firstValue = firstValue.convertTo(tableData.getColumn(indexColumn).getType(), database.getMode(), null);
-        lastValue = lastValue.convertTo(tableData.getColumn(indexColumn).getType(), database.getMode(), null);
+    private Cursor findRangeValue(Session session, List<Value> firstValue, List<Value> lastValue) {
         return new CacheCursor(metaInfo.getRowsInRange(session, firstValue, lastValue));
     }
 
@@ -115,7 +125,7 @@ public class CacheTableIndex extends BaseIndex {
 
     @Override
     public long getRowCountApproximation() {
-        return metaInfo.getCache().size();
+        return metaInfo.getRowSize();
     }
 
     @Override

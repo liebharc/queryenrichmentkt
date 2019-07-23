@@ -1,6 +1,5 @@
 package com.github.liebharc.cachetable;
 
-import com.google.common.cache.Cache;
 import org.h2.command.ddl.CreateTableData;
 import org.h2.engine.Session;
 import org.h2.message.DbException;
@@ -19,21 +18,22 @@ import java.util.stream.Collectors;
 
 public class CombinedCacheMetaData {
     private final static String REF_NAME = "REF";
-    private final CreateTableData tableData;
-    private final CacheMetaInfo cacheMetaInfo;
-    private final Column indexColumn;
-    private final ArrayList<Column> objectColumns;
+    private final ICacheMetaInfo cacheMetaInfo;
+    private final List<Column> indexColumns;
+    private final List<Column> objectColumns;
     private final IdentityHashMap<Column, Method> columnToMethod;
-    private final int rowSize;
-    private final ArrayList<Column> allColumns;
+    private final List<Column> allColumns;
 
-    public CombinedCacheMetaData(CreateTableData tableData, CacheMetaInfo cacheMetaInfo) {
-        this.tableData = tableData;
+    public CombinedCacheMetaData(CreateTableData tableData, ICacheMetaInfo cacheMetaInfo) {
         this.cacheMetaInfo = cacheMetaInfo;
         allColumns = new ArrayList<>(tableData.columns);
-        indexColumn = allColumns.get(0);
+        final long numberofCols = cacheMetaInfo.getNumberOfIndexColumns();
+        indexColumns = allColumns.stream().limit(numberofCols).collect(Collectors.toList());
         objectColumns = new ArrayList<>(allColumns);
-        objectColumns.remove(0);
+        for (long i = 0; i < numberofCols; i++) {
+            objectColumns.remove(0);
+        }
+
         if (objectColumns.size() > 1) {
             Map<String, Method> nameToMethod = Arrays.stream(cacheMetaInfo.getValue().getMethods())
                     .filter(method -> method.getName().startsWith("get") && method.getParameterCount() == 0)
@@ -48,10 +48,9 @@ public class CombinedCacheMetaData {
         else {
             columnToMethod = null;
         }
-
-        rowSize = allColumns.size();
     }
-    public Object getRawValue(Column column, Object entry) {
+
+    public Object getFieldValue(Column column, Object entry) {
         if (column.getName().equals(REF_NAME)) {
             try {
                 ByteArrayOutputStream bos = new ByteArrayOutputStream();
@@ -65,7 +64,7 @@ public class CombinedCacheMetaData {
         }
 
         if (columnToMethod == null) {
-            if (column == indexColumn) {
+            if (column == indexColumns) {
                 return entry;
             }
 
@@ -87,8 +86,8 @@ public class CombinedCacheMetaData {
         return null;
     }
 
-    public Value getValue(Session session, Column column, Object entry) {
-        Object columnValue = this.getRawValue(column, entry);
+    public Value getAndConvertFieldValue(Session session, Column column, Object entry) {
+        Object columnValue = this.getFieldValue(column, entry);
         return convertValue(session, column, columnValue);
     }
 
@@ -96,79 +95,81 @@ public class CombinedCacheMetaData {
         return DataType.convertToValue(session, columnValue, column.getType().getValueType());
     }
 
-    public Value[] getRowOrNull(Value indexValue, Session session) {
-        final Object value = this.getCache().getIfPresent(
-                indexColumn.convert(indexValue).getObject());
-        if (value == null) {
-            return null;
+    public List<Value[]> getRowOrNull(List<Value> indexValue, Session session) {
+        final List<Object> indexRawValue = new ArrayList<>((int) cacheMetaInfo.getNumberOfIndexColumns());
+        for (int i = 0; i < (int) cacheMetaInfo.getNumberOfIndexColumns(); i++) {
+            final Value idxVal = indexValue.get(i);
+            indexRawValue.add(idxVal != null ? idxVal.getObject() : null);
         }
 
-        Value[] values = new Value[this.getRowSize()];
-        values[0] = indexValue;
-        ArrayList<Column> columns = this.getAllColumns();
-        for (int i = 1; i < values.length; i++) {
-            Column column = columns.get(i);
-            values[i] = this.getValue(session, column, value);
+        final List<Object> entries = cacheMetaInfo.getOrNull(indexRawValue);
+        final List<Value[]> results = new ArrayList<>();
+        for (Object entry : entries) {
+            if (entry == null) {
+                return null;
+            }
+
+            Value[] values = new Value[allColumns.size()];
+            for (int i = 0; i < indexRawValue.size(); i++) {
+                values[i] = indexValue.get(i);
+                if (values[i] == null) {
+                    values[i] = this.getAndConvertFieldValue(session, indexColumns.get(i), entry);
+                }
+            }
+            List<Column> columns = allColumns;
+            for (int i = (int) cacheMetaInfo.getNumberOfIndexColumns(); i < values.length; i++) {
+                Column column = columns.get(i);
+                values[i] = this.getAndConvertFieldValue(session, column, entry);
+            }
+
+            results.add(values);
         }
 
-        return values;
+        return results;
     }
 
     public Iterator<Value[]> getAllRows(Session session) {
-        return this.getCache().asMap().entrySet().stream().map(entry -> {
-            ArrayList<Column> columns = this.getAllColumns();
-            Value[] values = new Value[this.getRowSize()];
-            values[0] = this.convertValue(session, indexColumn, entry.getKey());
-            for (int i = 1; i < values.length; i++) {
+        return cacheMetaInfo.getAll().map(entry -> {
+            List<Column> columns = allColumns;
+            Value[] values = new Value[allColumns.size()];
+            for (int i = 0; i < cacheMetaInfo.getNumberOfIndexColumns(); i++) {
+                values[i] = this.convertValue(session, indexColumns.get(i), entry.getKey());
+            }
+
+            for (int i = (int)cacheMetaInfo.getNumberOfIndexColumns(); i < values.length; i++) {
                 Column column = columns.get(i);
-                values[i] = this.getValue(session, column, entry.getValue());
+                values[i] = this.getAndConvertFieldValue(session, column, entry.getValue());
             }
 
             return values;
         }).iterator();
     }
 
-    public Iterator<Value[]> getRowsInRange(Session session, Value firstValue, Value lastValue) {
+    public Iterator<Value[]> getRowsInRange(Session session,  List<Value> firstValue,  List<Value> lastValue) {
+        return getRowsInRange(session, 0, firstValue, lastValue.get(0));
+    }
+
+    private Iterator<Value[]> getRowsInRange(Session session, int indexColumn, List<Value> currentValue, Value lastValue) {
         ValueLong one = ValueLong.get(1);
-        Value value = firstValue;
+        Value[] value = currentValue.toArray(new Value[0]);
         final List<Value[]> result = new ArrayList<>();
-        while (!value.equals(lastValue)) {
-            Value[] row = this.getRowOrNull(value, session);
+        while (!value[indexColumn].equals(lastValue)) {
+            List<Value[]> row = this.getRowOrNull(Arrays.asList(value), session);
             if (row != null) {
-                result.add(row);
+                result.addAll(row);
             }
 
-            value = value.add(one);
+            value[indexColumn] = value[indexColumn].add(one);
         }
 
         return result.iterator();
     }
 
-    public CreateTableData getTableData() {
-        return tableData;
+    public long getRowSize() {
+        return cacheMetaInfo.size();
     }
 
-    public CacheMetaInfo getCacheMetaInfo() {
-        return cacheMetaInfo;
-    }
-
-    public Cache<? extends  Object, ? extends  Object> getCache() {
-        return cacheMetaInfo.getCache();
-    }
-
-    public Column getIndexColumn() {
-        return indexColumn;
-    }
-
-    public int getRowSize() {
-        return rowSize;
-    }
-
-    public ArrayList<Column> getObjectColumns() {
-        return objectColumns;
-    }
-
-    public ArrayList<Column> getAllColumns() {
-        return allColumns;
+    public long getNumberOfIndexColumns() {
+        return cacheMetaInfo.getNumberOfIndexColumns();
     }
 }
