@@ -33,7 +33,7 @@ class CacheTable(data: CreateTableData) : Table(data.schema, data.id, data.table
         setColumns(data.columns.toTypedArray())
     }
 
-    private val index = CacheTableHashIndex(
+    private val index = CacheTableIndex(
             this,
             0,
             "Cache",

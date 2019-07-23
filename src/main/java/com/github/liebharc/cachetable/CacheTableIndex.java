@@ -18,7 +18,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 
-public class CacheTableHashIndex extends BaseIndex {
+public class CacheTableIndex extends BaseIndex {
 
     /**
      * The index of the indexed column.
@@ -28,7 +28,7 @@ public class CacheTableHashIndex extends BaseIndex {
     private final CombinedCacheMetaData metaInfo;
     private final static ArrayList<Value[]> emptyResult = new ArrayList<>();
 
-    public CacheTableHashIndex(
+    public CacheTableIndex(
             CacheTable table,
             int id,
             String indexName,
