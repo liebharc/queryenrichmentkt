@@ -133,7 +133,10 @@ public class CombinedCacheMetaData {
             List<Column> columns = allColumns;
             Value[] values = new Value[allColumns.size()];
             for (int i = 0; i < cacheMetaInfo.getNumberOfIndexColumns(); i++) {
-                values[i] = this.convertValue(session, indexColumns.get(i), entry.getKey());
+                values[i] =
+                        cacheMetaInfo.getNumberOfIndexColumns() == 1
+                            ? this.convertValue(session, indexColumns.get(i), entry.getKey())
+                            : this.getAndConvertFieldValue(session, indexColumns.get(i), entry.getValue());
             }
 
             for (int i = (int)cacheMetaInfo.getNumberOfIndexColumns(); i < values.length; i++) {

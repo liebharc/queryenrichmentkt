@@ -83,5 +83,14 @@ class CacheTableComplexKeyTest : ResultSetAssertions() {
         assertEquals(listOf(
                 listOf("3", "10", "David", "Tenant"),
                 listOf("3", "11", "Matt", "Smith")), result)
+
+        result = consume(statement!!.executeQuery("SELECT * FROM STUDENT WHERE CLASSID > 2"))
+        assertEquals(listOf(
+                listOf("3", "10", "David", "Tenant"),
+                listOf("3", "11", "Matt", "Smith")), result)
+
+        result = consume(statement!!.executeQuery("SELECT * FROM STUDENT WHERE CLASSID = 3 AND STUDENTID > 10"))
+        assertEquals(listOf(
+                listOf("3", "11", "Matt", "Smith")), result)
     }
 }
