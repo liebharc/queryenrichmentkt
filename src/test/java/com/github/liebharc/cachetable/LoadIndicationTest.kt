@@ -38,9 +38,9 @@ class LoadIndicationTest : ResultSetAssertions() {
         connection!!.close()
     }
 
-    private val query = "SELECT id, lastName FROM STUDENT WHERE ID >= 100 AND ID < 200"
+    private val query = "SELECT id, lastName FROM STUDENT WHERE ID >= 100 AND ID < 150"
 
-    private val rangeSize = 100L
+    private val rangeSize = 50L
 
     @Test
     fun referenceRun() {

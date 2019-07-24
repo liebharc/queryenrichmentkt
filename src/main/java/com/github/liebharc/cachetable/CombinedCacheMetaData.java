@@ -149,23 +149,48 @@ public class CombinedCacheMetaData {
     }
 
     public Iterator<Value[]> getRowsInRange(Session session,  List<Value> firstValue,  List<Value> lastValue) {
-        return getRowsInRange(session, 0, firstValue, lastValue.get(0));
+        return getRowsInRange(session, 0, firstValue, lastValue);
     }
 
-    private Iterator<Value[]> getRowsInRange(Session session, int indexColumn, List<Value> currentValue, Value lastValue) {
-        ValueLong one = ValueLong.get(1);
-        Value[] value = currentValue.toArray(new Value[0]);
+    private Iterator<Value[]> getRowsInRange(Session session, int indexColumn, List<Value> currentValue, List<Value> lastValue) {
         final List<Value[]> result = new ArrayList<>();
-        while (!value[indexColumn].equals(lastValue)) {
-            List<Value[]> row = this.getRowOrNull(Arrays.asList(value), session);
+        getRowsInRangeRec(
+                session,
+                result,
+                currentValue.toArray(new Value[0]),
+                currentValue.toArray(new Value[0]),
+                lastValue.toArray(new Value[0]), 0);
+        return result.iterator();
+    }
+
+    /**
+     * Implements a nested loop which for each level iterates from lower bound to upper bound (inclusive). If
+     * lower or upper bound is null then this is unbounded (to one or both sides) and we instead return all values
+     * on that cache level.
+     */
+    void getRowsInRangeRec(Session session, List<Value[]> result, Value[] counters, Value[] lowerBound, Value[] upperBound, int level) {
+        if(level == counters.length) {
+            List<Value[]> row = this.getRowOrNull(Arrays.asList(counters), session);
             if (row != null) {
                 result.addAll(row);
             }
-
-            value[indexColumn] = value[indexColumn].add(one);
         }
+        else {
+            if (lowerBound[level]== null || upperBound[level] == null) {
+                counters[level] = null; // Unbounded query
+                getRowsInRangeRec(session, result, counters, lowerBound, upperBound, level + 1);
+                return;
+            }
 
-        return result.iterator();
+            counters[level] = lowerBound[level];
+            while (!counters[level].equals(upperBound[level])) {
+                getRowsInRangeRec(session, result, counters, lowerBound, upperBound, level + 1);
+                counters[level] = counters[level].add(ValueLong.get(1));
+            }
+
+            // One more recursive call as the upper bound should be included
+            getRowsInRangeRec(session, result, counters, lowerBound, upperBound, level + 1);
+        }
     }
 
     public long getRowSize() {
