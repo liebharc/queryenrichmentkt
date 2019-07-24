@@ -43,7 +43,7 @@ data class CacheKeyMataInfo(val cache: Cache<CacheKey, StudentClass>) : ICacheMe
         return Collections.singletonList(result)
     }
 
-    override fun getAllValues(): Stream<out MutableMap.MutableEntry<out Any, out Any>> {
+    override fun getAllValues(): Stream<out Map.Entry<out Any, out Any>> {
         return cache.asMap().entries.stream();
     }
 

@@ -9,7 +9,7 @@ interface ICacheMetaInfo {
 
     fun size(): Long
     fun getValueOrNull(key: Array<Any?>): Any?
-    fun getAllValues(): Stream<out MutableMap.MutableEntry<out Any, out Any>>
+    fun getAllValues(): Stream<out Map.Entry<out Any, out Any>>
     fun getNumberOfIndexColumns(): Int
     fun createFieldAccessor(colName: String): Function<Any, Any>?;
 }

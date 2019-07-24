@@ -24,7 +24,7 @@ open class SingleIdCacheMetaInfo(override val key: Class<out Any>, override val 
         return result;
     }
 
-    override fun getAllValues(): Stream<out MutableMap.MutableEntry<out Any, out Any>> {
+    override fun getAllValues(): Stream<out Map.Entry<out Any, out Any>> {
         return cache.asMap().entries.stream();
     }
 

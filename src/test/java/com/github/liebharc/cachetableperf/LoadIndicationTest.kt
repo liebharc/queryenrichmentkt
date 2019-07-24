@@ -1,6 +1,7 @@
 package com.github.liebharc.cachetableperf
 
 import com.github.liebharc.cachetable.CacheTable
+import com.github.liebharc.cachetable.ICacheMetaInfo
 import com.github.liebharc.cachetable.ResultSetAssertions
 import com.github.liebharc.cachetable.SingleIdCacheMetaInfo
 import com.github.liebharc.queryenrichment.Student
@@ -13,34 +14,61 @@ import org.springframework.jdbc.core.JdbcTemplate
 import java.sql.Connection
 import java.sql.SQLException
 import java.sql.Statement
+import java.util.HashMap
 import java.util.function.Function
+import java.util.stream.Stream
 
-
-class StudentSpecializedMetaDData(cache: Cache<out Any, out Any>) : SingleIdCacheMetaInfo(Long::class.java, Student::class.java, cache) {
-
-    override fun createFieldAccessor(colName: String): Function<Any, Any>? {
-        if (colName == "ID") {
-            return Function { obj: Any -> (obj as Student).id as Any };
-        }
-
-        if (colName == "FIRSTNAME") {
-            return Function{ obj: Any -> (obj as Student).firstName as Any};
-        }
-
-        if (colName == "LASTNAME") {
-            return Function { obj: Any -> (obj as Student).lastName as Any};
-        }
-
-        return null;
-    }
-}
 
 class LoadIndicationTest : ResultSetAssertions() {
+
+    class StudentSpecializedMetaDData(private val cache: Map<out Any, out Any>) : ICacheMetaInfo {
+        override val key: Class<out Any> = Long::class.java
+        override val value: Class<out Any> = Student::class.java
+
+
+        override fun size(): Long {
+            return cache.size.toLong();
+        }
+
+        override fun getValueOrNull(key: Array<Any?>): Any? {
+            val result = cache.get(key.get(0)!!);
+            if (result == null) {
+                return null;
+            }
+
+            return result;
+        }
+
+        override fun getAllValues(): Stream<out Map.Entry<out Any, out Any>> {
+            return cache.entries.stream();
+        }
+
+        override fun getNumberOfIndexColumns(): Int {
+            return 1;
+        }
+
+
+        override fun createFieldAccessor(colName: String): Function<Any, Any>? {
+            if (colName == "ID") {
+                return Function { obj: Any -> (obj as Student).id as Any };
+            }
+
+            if (colName == "FIRSTNAME") {
+                return Function{ obj: Any -> (obj as Student).firstName as Any};
+            }
+
+            if (colName == "LASTNAME") {
+                return Function { obj: Any -> (obj as Student).lastName as Any};
+            }
+
+            return null;
+        }
+    }
     private var connection: Connection? = null
     private var statement: Statement? = null
     private var dataSource: JdbcDataSource? = null
     private var jdbcTemplate: JdbcTemplate? = null
-    private var cache: Cache<Long, Student>? = null
+    private var cache: MutableMap<Long, Student>? = null
 
     @Before
     @Throws(SQLException::class)
@@ -154,7 +182,7 @@ class LoadIndicationTest : ResultSetAssertions() {
 
     private fun fillCache() {
         statement = connection!!.createStatement()
-        cache = CacheBuilder.newBuilder().build<Long, Student>()
+        cache = HashMap()
         CacheTable.register("STUDENT", StudentSpecializedMetaDData(cache!!))
         for (i in 0 until RESULT_SIZE) {
             cache!!.put(i, Student(i, "John", "Smith"))
