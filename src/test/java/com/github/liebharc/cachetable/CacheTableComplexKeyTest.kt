@@ -42,7 +42,7 @@ data class CacheKeyMataInfo(val cache: Cache<CacheKey, StudentClass>) : ICacheMe
         return cache.asMap().entries.stream();
     }
 
-    override fun getNumberOfIndexColumns(): Long {
+    override fun getNumberOfIndexColumns(): Int {
         return 2;
     }
 

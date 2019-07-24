@@ -8,5 +8,5 @@ interface ICacheMetaInfo {
     fun size(): Long
     fun getOrNull(key: List<Any?>): List<Any?>
     fun getAll(): Stream<out MutableMap.MutableEntry<out Any, out Any>>
-    fun getNumberOfIndexColumns(): Long
+    fun getNumberOfIndexColumns(): Int
 }

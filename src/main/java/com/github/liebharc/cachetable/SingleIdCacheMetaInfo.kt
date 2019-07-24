@@ -24,7 +24,7 @@ data class SingleIdCacheMetaInfo(override val key: Class<out Any>, override val 
         return cache.asMap().entries.stream();
     }
 
-    override fun getNumberOfIndexColumns(): Long {
+    override fun getNumberOfIndexColumns(): Int {
         return 1;
     }
 }

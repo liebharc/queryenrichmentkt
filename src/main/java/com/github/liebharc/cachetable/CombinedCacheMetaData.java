@@ -27,7 +27,7 @@ public class CombinedCacheMetaData {
     public CombinedCacheMetaData(CreateTableData tableData, ICacheMetaInfo cacheMetaInfo) {
         this.cacheMetaInfo = cacheMetaInfo;
         allColumns = new ArrayList<>(tableData.columns);
-        final long numberofCols = cacheMetaInfo.getNumberOfIndexColumns();
+        final int numberofCols = cacheMetaInfo.getNumberOfIndexColumns();
         indexColumns = allColumns.stream().limit(numberofCols).collect(Collectors.toList());
         objectColumns = new ArrayList<>(allColumns);
         for (long i = 0; i < numberofCols; i++) {
@@ -96,8 +96,8 @@ public class CombinedCacheMetaData {
     }
 
     public List<Value[]> getRowOrNull(Value[] indexValue, Session session) {
-        final List<Object> indexRawValue = new ArrayList<>((int) cacheMetaInfo.getNumberOfIndexColumns());
-        for (int i = 0; i < (int) cacheMetaInfo.getNumberOfIndexColumns(); i++) {
+        final List<Object> indexRawValue = new ArrayList<>(cacheMetaInfo.getNumberOfIndexColumns());
+        for (int i = 0; i < cacheMetaInfo.getNumberOfIndexColumns(); i++) {
             final Value idxVal = indexValue[i];
             indexRawValue.add(idxVal != null ? idxVal.getObject() : null);
         }
@@ -117,7 +117,7 @@ public class CombinedCacheMetaData {
                 }
             }
             List<Column> columns = allColumns;
-            for (int i = (int) cacheMetaInfo.getNumberOfIndexColumns(); i < values.length; i++) {
+            for (int i = cacheMetaInfo.getNumberOfIndexColumns(); i < values.length; i++) {
                 Column column = columns.get(i);
                 values[i] = this.getAndConvertFieldValue(session, column, entry);
             }
@@ -139,7 +139,7 @@ public class CombinedCacheMetaData {
                             : this.getAndConvertFieldValue(session, indexColumns.get(i), entry.getValue());
             }
 
-            for (int i = (int)cacheMetaInfo.getNumberOfIndexColumns(); i < values.length; i++) {
+            for (int i = cacheMetaInfo.getNumberOfIndexColumns(); i < values.length; i++) {
                 Column column = columns.get(i);
                 values[i] = this.getAndConvertFieldValue(session, column, entry.getValue());
             }
@@ -195,6 +195,6 @@ public class CombinedCacheMetaData {
     }
 
     public int getNumberOfIndexColumns() {
-        return (int) cacheMetaInfo.getNumberOfIndexColumns();
+        return cacheMetaInfo.getNumberOfIndexColumns();
     }
 }
