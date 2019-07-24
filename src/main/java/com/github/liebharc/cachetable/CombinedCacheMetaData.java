@@ -14,6 +14,7 @@ import java.io.ObjectOutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class CombinedCacheMetaData {
@@ -21,7 +22,7 @@ public class CombinedCacheMetaData {
     private final ICacheMetaInfo cacheMetaInfo;
     private final List<Column> indexColumns;
     private final List<Column> objectColumns;
-    private final IdentityHashMap<Column, Method> columnToMethod;
+    private final List<Function<? super Object, ?>> columnToMethod;
     private final List<Column> allColumns;
 
     public CombinedCacheMetaData(CreateTableData tableData, ICacheMetaInfo cacheMetaInfo) {
@@ -38,12 +39,36 @@ public class CombinedCacheMetaData {
             Map<String, Method> nameToMethod = Arrays.stream(cacheMetaInfo.getValue().getMethods())
                     .filter(method -> method.getName().startsWith("get") && method.getParameterCount() == 0)
                     .collect(Collectors.toMap(method -> method.getName().toUpperCase().substring(3), method -> method));
-            columnToMethod = new IdentityHashMap<>();
-            allColumns.stream()
-                    .filter(col -> !col.getName().equals(REF_NAME))
-                    .forEach(col -> {
-                        columnToMethod.put(col, nameToMethod.get(col.getName().toUpperCase()));
-                    });
+            columnToMethod = new ArrayList<>(allColumns.size());
+            for (int i = 0; i < allColumns.size(); i++) {
+                Column col = allColumns.get(i);
+                if (col.getName().equals(REF_NAME)) {
+                    continue;
+                }
+
+                final String colName = col.getName().toUpperCase();
+                Function<? super Object, ?> getter = cacheMetaInfo.createFieldAccessor(colName);
+                if (getter == null) {
+                    Method method = nameToMethod.get(colName);
+                    if (method == null) {
+                        throw new IllegalArgumentException("Unknown column: " + colName);
+                    }
+
+                    getter = obj -> {
+                        try {
+                            return method.invoke(obj);
+                        } catch (IllegalAccessException e) {
+                            DbException.throwInternalError(e.getMessage());
+                        } catch (InvocationTargetException e) {
+                            DbException.throwInternalError(e.getMessage());
+                        }
+
+                        return null;
+                    };
+                }
+
+                columnToMethod.add(getter);
+            }
         }
         else {
             columnToMethod = null;
@@ -71,19 +96,11 @@ public class CombinedCacheMetaData {
             return entry;
         }
 
-        try {
-            Method getter = columnToMethod.get(column);
-            if (getter == null) {
-                DbException.throwInternalError("Unknown column " + column);
-            }
-            return getter.invoke(entry);
-        } catch (IllegalAccessException e) {
-            DbException.throwInternalError(e.getMessage());
-        } catch (InvocationTargetException e) {
-            DbException.throwInternalError(e.getMessage());
+        Function<? super Object, ?> getter = columnToMethod.get(column.getColumnId());
+        if (getter == null) {
+            DbException.throwInternalError("Unknown column " + column);
         }
-
-        return null;
+        return getter.apply(entry);
     }
 
     public Value getAndConvertFieldValue(Session session, Column column, Object entry) {

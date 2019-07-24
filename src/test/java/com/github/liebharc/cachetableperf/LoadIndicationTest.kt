@@ -2,6 +2,7 @@ package com.github.liebharc.cachetableperf
 
 import com.github.liebharc.cachetable.CacheTable
 import com.github.liebharc.cachetable.ResultSetAssertions
+import com.github.liebharc.cachetable.SingleIdCacheMetaInfo
 import com.github.liebharc.queryenrichment.Student
 import com.google.common.cache.Cache
 import com.google.common.cache.CacheBuilder
@@ -12,6 +13,27 @@ import org.springframework.jdbc.core.JdbcTemplate
 import java.sql.Connection
 import java.sql.SQLException
 import java.sql.Statement
+import java.util.function.Function
+
+
+class StudentSpecializedMetaDData(cache: Cache<out Any, out Any>) : SingleIdCacheMetaInfo(Long::class.java, Student::class.java, cache) {
+
+    override fun createFieldAccessor(colName: String): Function<Any, Any>? {
+        if (colName == "ID") {
+            return Function { obj: Any -> (obj as Student).id as Any };
+        }
+
+        if (colName == "FIRSTNAME") {
+            return Function{ obj: Any -> (obj as Student).firstName as Any};
+        }
+
+        if (colName == "LASTNAME") {
+            return Function { obj: Any -> (obj as Student).lastName as Any};
+        }
+
+        return null;
+    }
+}
 
 class LoadIndicationTest : ResultSetAssertions() {
     private var connection: Connection? = null
@@ -133,7 +155,7 @@ class LoadIndicationTest : ResultSetAssertions() {
     private fun fillCache() {
         statement = connection!!.createStatement()
         cache = CacheBuilder.newBuilder().build<Long, Student>()
-        CacheTable.register(Long::class, Student::class, "STUDENT", cache!!)
+        CacheTable.register("STUDENT", StudentSpecializedMetaDData(cache!!))
         for (i in 0 until RESULT_SIZE) {
             cache!!.put(i, Student(i, "John", "Smith"))
             cache!!.put(11, Student(11, "Matt", "Smith"))

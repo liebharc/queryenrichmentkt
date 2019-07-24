@@ -2,10 +2,14 @@ package com.github.liebharc.cachetable
 
 import com.google.common.cache.Cache
 import java.util.*
+import java.util.function.Function
 import java.util.stream.Stream
 import kotlin.reflect.KClass
 
-data class SingleIdCacheMetaInfo(override val key: Class<out Any>, override val value: Class<out Any>, private val cache: Cache<out Any, out Any>) : ICacheMetaInfo {
+open class SingleIdCacheMetaInfo(override val key: Class<out Any>, override val value: Class<out Any>, private val cache: Cache<out Any, out Any>) : ICacheMetaInfo {
+    override fun createFieldAccessor(colName: String): Function<Any, Any>? {
+       return null;
+    }
 
     override fun size(): Long {
         return cache.size();

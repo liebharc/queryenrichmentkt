@@ -11,6 +11,7 @@ import org.junit.Test
 import java.io.Serializable
 import java.sql.*
 import java.util.*
+import java.util.function.Function
 import java.util.stream.Stream
 
 data class StudentClass(val studentId: Long, val classId: Long, val firstName: String, val lastName: String) : Serializable
@@ -18,6 +19,10 @@ data class StudentClass(val studentId: Long, val classId: Long, val firstName: S
 data class CacheKey(val classId: Long, val studentId: Long)
 
 data class CacheKeyMataInfo(val cache: Cache<CacheKey, StudentClass>) : ICacheMetaInfo {
+    override fun createFieldAccessor(colName: String): Function<Any, Any>? {
+        return null;
+    }
+
     override val key: Class<out Any> = CacheKey::class.java
     override val value: Class<out Any> = StudentClass::class.java
 
