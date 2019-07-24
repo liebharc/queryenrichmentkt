@@ -194,6 +194,6 @@ class LoadIndicationTest : ResultSetAssertions() {
 
     companion object {
         private const val RESULT_SIZE: Long = 10000
-        private const val ITERATIONS: Long = 2000
+        private const val ITERATIONS: Long = 20000
     }
 }

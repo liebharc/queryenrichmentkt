@@ -161,17 +161,20 @@ public class CombinedCacheMetaData {
     }
 
     Iterator<Value[]> getAllRows(Session session) {
+        List<Column> columns = allColumns;
+        int columnsSize = allColumns.size();
+        final int indexColumnsCnt = cacheMetaInfo.getNumberOfIndexColumns();
+        final boolean simpleKey = indexColumnsCnt == 1;
         return cacheMetaInfo.getAllValues().map(entry -> {
-            List<Column> columns = allColumns;
-            Value[] values = new Value[allColumns.size()];
-            for (int i = 0; i < cacheMetaInfo.getNumberOfIndexColumns(); i++) {
+            Value[] values = new Value[columnsSize];
+            for (int i = 0; i < indexColumnsCnt; i++) {
                 values[i] =
-                        cacheMetaInfo.getNumberOfIndexColumns() == 1
+                        simpleKey
                             ? this.convertValue(session, indexColumns.get(i), entry.getKey())
                             : this.getAndConvertFieldValue(session, indexColumns.get(i), entry.getValue());
             }
 
-            for (int i = cacheMetaInfo.getNumberOfIndexColumns(); i < values.length; i++) {
+            for (int i = indexColumnsCnt; i < values.length; i++) {
                 Column column = columns.get(i);
                 values[i] = this.getAndConvertFieldValue(session, column, entry.getValue());
             }
