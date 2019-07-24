@@ -1,6 +1,7 @@
 package com.github.liebharc.cachetable;
 
 import kotlin.NotImplementedError;
+import org.checkerframework.checker.units.qual.C;
 import org.h2.command.dml.AllColumnsForPlan;
 import org.h2.engine.Mode;
 import org.h2.engine.Session;
@@ -26,7 +27,7 @@ public class CacheTableIndex extends BaseIndex {
     /**
      * The index of the indexed column.
      */
-    private final List<Column> indexColumn;
+    private final Column[] indexColumn;
     private final CombinedCacheMetaData metaInfo;
     private final static ArrayList<Value[]> emptyResult = new ArrayList<>();
 
@@ -39,30 +40,25 @@ public class CacheTableIndex extends BaseIndex {
             CombinedCacheMetaData metaInfo) {
         super(table, id, indexName, columns, indexType);
         this.metaInfo = metaInfo;
-        indexColumn =
-                Arrays.stream(columns)
-                        .limit(metaInfo.getNumberOfIndexColumns())
-                        .map(column -> column.column)
-                        .collect(Collectors.toList());
-        reset();
-    }
-
-    private void reset() {
+        indexColumn = new Column[metaInfo.getNumberOfIndexColumns()];
+        for (int i = 0; i < indexColumn.length; i++) {
+            indexColumn[i] = columns[i].column;
+        }
     }
 
     @Override
     public void truncate(Session session) {
-        reset();
+        // Changes aren't supported
     }
 
     @Override
     public void add(Session session, Row row) {
-        // Changes to the metaInfo are not supported
+        // Changes aren't supported
     }
 
     @Override
     public void remove(Session session, Row row) {
-        // Changes to the metaInfo are not supported
+        // Changes aren't supported
     }
 
     @Override
@@ -71,8 +67,8 @@ public class CacheTableIndex extends BaseIndex {
             return findAll(session);
         }
 
-        List<Value> firstValue = getValue(first);
-        List<Value> lastValue = getValue(last);
+        Value[] firstValue = getValue(first);
+        Value[] lastValue = getValue(last);
 
         if (firstValue.equals(lastValue)) {
             return findSingleValue(session, firstValue);
@@ -81,22 +77,19 @@ public class CacheTableIndex extends BaseIndex {
         return findRangeValue(session, firstValue, lastValue);
     }
 
-    private List<Value> getValue(SearchRow row) {
-        return indexColumn.stream()
-                .map(col -> {
-                    Value value = row.getValue(col.getColumnId());
-                    return value != null ? value.convertTo(col.getType(), database.getMode(), null) : null;
-                })
-                .collect(Collectors.toList());
+    private Value[] getValue(SearchRow row) {
+        Value[] result = new Value[indexColumn.length];
+        for (int i = 0; i < result.length; i++) {
+            Column col = indexColumn[i];
+            Value value = row.getValue(col.getColumnId());
+            result[i] = value != null ? value.convertTo(col.getType(), database.getMode(), null) : null;
+        }
+
+        return result;
     }
 
     @NotNull
-    private Cursor findSingleValue(Session session, List<Value> firstValue) {
-        if (firstValue == ValueNull.INSTANCE
-                && database.getMode().uniqueIndexNullsHandling != Mode.UniqueIndexNullsHandling.FORBID_ANY_DUPLICATES) {
-            //return new NonUniqueHashCursor(session, tableData, nullRows);
-            throw new NotImplementedError("");
-        }
+    private Cursor findSingleValue(Session session, Value[] firstValue) {
         /*
          * Sometimes the incoming search is a similar, but not the same type
          * e.g. the search value is INT, but the index column is LONG. In which
@@ -110,7 +103,7 @@ public class CacheTableIndex extends BaseIndex {
         return new CacheCursor(values.iterator());
     }
 
-    private Cursor findRangeValue(Session session, List<Value> firstValue, List<Value> lastValue) {
+    private Cursor findRangeValue(Session session, Value[] firstValue, Value[] lastValue) {
         return new CacheCursor(metaInfo.getRowsInRange(session, firstValue, lastValue));
     }
 

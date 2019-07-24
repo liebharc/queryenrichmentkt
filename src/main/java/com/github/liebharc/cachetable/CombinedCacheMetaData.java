@@ -95,10 +95,10 @@ public class CombinedCacheMetaData {
         return DataType.convertToValue(session, columnValue, column.getType().getValueType());
     }
 
-    public List<Value[]> getRowOrNull(List<Value> indexValue, Session session) {
+    public List<Value[]> getRowOrNull(Value[] indexValue, Session session) {
         final List<Object> indexRawValue = new ArrayList<>((int) cacheMetaInfo.getNumberOfIndexColumns());
         for (int i = 0; i < (int) cacheMetaInfo.getNumberOfIndexColumns(); i++) {
-            final Value idxVal = indexValue.get(i);
+            final Value idxVal = indexValue[i];
             indexRawValue.add(idxVal != null ? idxVal.getObject() : null);
         }
 
@@ -111,7 +111,7 @@ public class CombinedCacheMetaData {
 
             Value[] values = new Value[allColumns.size()];
             for (int i = 0; i < indexRawValue.size(); i++) {
-                values[i] = indexValue.get(i);
+                values[i] = indexValue[i];
                 if (values[i] == null) {
                     values[i] = this.getAndConvertFieldValue(session, indexColumns.get(i), entry);
                 }
@@ -148,18 +148,15 @@ public class CombinedCacheMetaData {
         }).iterator();
     }
 
-    public Iterator<Value[]> getRowsInRange(Session session,  List<Value> firstValue,  List<Value> lastValue) {
-        return getRowsInRange(session, 0, firstValue, lastValue);
-    }
-
-    private Iterator<Value[]> getRowsInRange(Session session, int indexColumn, List<Value> currentValue, List<Value> lastValue) {
+    public Iterator<Value[]> getRowsInRange(Session session,  Value[] firstValue,  Value[] lastValue) {
         final List<Value[]> result = new ArrayList<>();
         getRowsInRangeRec(
                 session,
                 result,
-                currentValue.toArray(new Value[0]),
-                currentValue.toArray(new Value[0]),
-                lastValue.toArray(new Value[0]), 0);
+                firstValue.clone(),
+                firstValue,
+                lastValue,
+                0);
         return result.iterator();
     }
 
@@ -170,7 +167,7 @@ public class CombinedCacheMetaData {
      */
     void getRowsInRangeRec(Session session, List<Value[]> result, Value[] counters, Value[] lowerBound, Value[] upperBound, int level) {
         if(level == counters.length) {
-            List<Value[]> row = this.getRowOrNull(Arrays.asList(counters), session);
+            List<Value[]> row = this.getRowOrNull(counters, session);
             if (row != null) {
                 result.addAll(row);
             }
@@ -197,7 +194,7 @@ public class CombinedCacheMetaData {
         return cacheMetaInfo.size();
     }
 
-    public long getNumberOfIndexColumns() {
-        return cacheMetaInfo.getNumberOfIndexColumns();
+    public int getNumberOfIndexColumns() {
+        return (int) cacheMetaInfo.getNumberOfIndexColumns();
     }
 }
