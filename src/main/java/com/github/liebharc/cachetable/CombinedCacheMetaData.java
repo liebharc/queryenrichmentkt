@@ -119,7 +119,7 @@ public class CombinedCacheMetaData {
             indexRawValue[i] = idxVal != null ? idxVal.getObject() : null;
         }
 
-        final Object result = cacheMetaInfo.getOrNull(indexRawValue);
+        final Object result = cacheMetaInfo.getValueOrNull(indexRawValue);
 
         if (expectListResults) {
             return returnListValue(indexValue, session, indexRawValue, (List<Object>)result);
@@ -161,7 +161,7 @@ public class CombinedCacheMetaData {
     }
 
     Iterator<Value[]> getAllRows(Session session) {
-        return cacheMetaInfo.getAll().map(entry -> {
+        return cacheMetaInfo.getAllValues().map(entry -> {
             List<Column> columns = allColumns;
             Value[] values = new Value[allColumns.size()];
             for (int i = 0; i < cacheMetaInfo.getNumberOfIndexColumns(); i++) {

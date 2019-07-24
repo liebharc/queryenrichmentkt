@@ -15,7 +15,7 @@ open class SingleIdCacheMetaInfo(override val key: Class<out Any>, override val 
         return cache.size();
     }
 
-    override fun getOrNull(key: Array<Any?>): Any? {
+    override fun getValueOrNull(key: Array<Any?>): Any? {
         val result = cache.getIfPresent(key.get(0)!!);
         if (result == null) {
             return null;
@@ -24,7 +24,7 @@ open class SingleIdCacheMetaInfo(override val key: Class<out Any>, override val 
         return result;
     }
 
-    override fun getAll(): Stream<out MutableMap.MutableEntry<out Any, out Any>> {
+    override fun getAllValues(): Stream<out MutableMap.MutableEntry<out Any, out Any>> {
         return cache.asMap().entries.stream();
     }
 

@@ -8,8 +8,8 @@ interface ICacheMetaInfo {
     val value: Class<out Any>
 
     fun size(): Long
-    fun getOrNull(key: Array<Any?>): Any?
-    fun getAll(): Stream<out MutableMap.MutableEntry<out Any, out Any>>
+    fun getValueOrNull(key: Array<Any?>): Any?
+    fun getAllValues(): Stream<out MutableMap.MutableEntry<out Any, out Any>>
     fun getNumberOfIndexColumns(): Int
     fun createFieldAccessor(colName: String): Function<Any, Any>?;
 }
