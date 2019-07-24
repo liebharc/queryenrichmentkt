@@ -21,17 +21,19 @@ public class CombinedCacheMetaData {
     private final static String REF_NAME = "REF";
     private final ICacheMetaInfo cacheMetaInfo;
     private final List<Column> indexColumns;
-    private final List<Column> objectColumns;
     private final List<Function<? super Object, ?>> columnToMethod;
     private final List<Column> allColumns;
+    private final boolean expectListResults;
+    private final ValueLong one = ValueLong.get(1);
 
     public CombinedCacheMetaData(CreateTableData tableData, ICacheMetaInfo cacheMetaInfo) {
         this.cacheMetaInfo = cacheMetaInfo;
+        expectListResults = cacheMetaInfo.getNumberOfIndexColumns() > 1;
         allColumns = new ArrayList<>(tableData.columns);
-        final int numberofCols = cacheMetaInfo.getNumberOfIndexColumns();
-        indexColumns = allColumns.stream().limit(numberofCols).collect(Collectors.toList());
-        objectColumns = new ArrayList<>(allColumns);
-        for (long i = 0; i < numberofCols; i++) {
+        final int numberOfCols = cacheMetaInfo.getNumberOfIndexColumns();
+        indexColumns = allColumns.stream().limit(numberOfCols).collect(Collectors.toList());
+        List<Column> objectColumns = new ArrayList<>(allColumns);
+        for (int i = 0; i < numberOfCols; i++) {
             objectColumns.remove(0);
         }
 
@@ -57,9 +59,7 @@ public class CombinedCacheMetaData {
                     getter = obj -> {
                         try {
                             return method.invoke(obj);
-                        } catch (IllegalAccessException e) {
-                            DbException.throwInternalError(e.getMessage());
-                        } catch (InvocationTargetException e) {
+                        } catch (IllegalAccessException | InvocationTargetException e) {
                             DbException.throwInternalError(e.getMessage());
                         }
 
@@ -75,7 +75,7 @@ public class CombinedCacheMetaData {
         }
     }
 
-    public Object getFieldValue(Column column, Object entry) {
+    private Object getFieldValue(Column column, Object entry) {
         if (column.getName().equals(REF_NAME)) {
             try {
                 ByteArrayOutputStream bos = new ByteArrayOutputStream();
@@ -103,7 +103,7 @@ public class CombinedCacheMetaData {
         return getter.apply(entry);
     }
 
-    public Value getAndConvertFieldValue(Session session, Column column, Object entry) {
+    private Value getAndConvertFieldValue(Session session, Column column, Object entry) {
         Object columnValue = this.getFieldValue(column, entry);
         return convertValue(session, column, columnValue);
     }
@@ -113,39 +113,54 @@ public class CombinedCacheMetaData {
     }
 
     public List<Value[]> getRowOrNull(Value[] indexValue, Session session) {
-        final List<Object> indexRawValue = new ArrayList<>(cacheMetaInfo.getNumberOfIndexColumns());
+        final Object[] indexRawValue = new Object[cacheMetaInfo.getNumberOfIndexColumns()];
         for (int i = 0; i < cacheMetaInfo.getNumberOfIndexColumns(); i++) {
             final Value idxVal = indexValue[i];
-            indexRawValue.add(idxVal != null ? idxVal.getObject() : null);
+            indexRawValue[i] = idxVal != null ? idxVal.getObject() : null;
         }
 
-        final List<Object> entries = cacheMetaInfo.getOrNull(indexRawValue);
+        final Object result = cacheMetaInfo.getOrNull(indexRawValue);
+
+        if (expectListResults) {
+            return returnListValue(indexValue, session, indexRawValue, (List<Object>)result);
+        }
+
+        Value[] singleResult = returnSingleValue(indexValue, session, indexRawValue, result);
+        return singleResult == null ? Collections.emptyList() : Collections.singletonList(singleResult);
+    }
+
+    private List<Value[]> returnListValue(Value[] indexValue, Session session, Object[] indexRawValue, List<Object> entries) {
         final List<Value[]> results = new ArrayList<>();
         for (Object entry : entries) {
-            if (entry == null) {
-                return null;
+            Value[] values = returnSingleValue(indexValue, session, indexRawValue, entry);
+            if (values != null) {
+                results.add(values);
             }
-
-            Value[] values = new Value[allColumns.size()];
-            for (int i = 0; i < indexRawValue.size(); i++) {
-                values[i] = indexValue[i];
-                if (values[i] == null) {
-                    values[i] = this.getAndConvertFieldValue(session, indexColumns.get(i), entry);
-                }
-            }
-            List<Column> columns = allColumns;
-            for (int i = cacheMetaInfo.getNumberOfIndexColumns(); i < values.length; i++) {
-                Column column = columns.get(i);
-                values[i] = this.getAndConvertFieldValue(session, column, entry);
-            }
-
-            results.add(values);
         }
 
         return results;
     }
 
-    public Iterator<Value[]> getAllRows(Session session) {
+    private Value[] returnSingleValue(Value[] indexValue, Session session, Object[] indexRawValue, Object entry) {
+        if (entry == null) {
+            return null;
+        }
+
+        Value[] values = new Value[allColumns.size()];
+        for (int i = 0; i < indexRawValue.length; i++) {
+            values[i] = indexValue[i];
+            if (values[i] == null) {
+                values[i] = this.getAndConvertFieldValue(session, indexColumns.get(i), entry);
+            }
+        }
+        for (int i = cacheMetaInfo.getNumberOfIndexColumns(); i < values.length; i++) {
+            Column column = allColumns.get(i);
+            values[i] = this.getAndConvertFieldValue(session, column, entry);
+        }
+        return values;
+    }
+
+    Iterator<Value[]> getAllRows(Session session) {
         return cacheMetaInfo.getAll().map(entry -> {
             List<Column> columns = allColumns;
             Value[] values = new Value[allColumns.size()];
@@ -165,7 +180,7 @@ public class CombinedCacheMetaData {
         }).iterator();
     }
 
-    public Iterator<Value[]> getRowsInRange(Session session,  Value[] firstValue,  Value[] lastValue) {
+    List<Value[]> getRowsInRange(Session session, Value[] firstValue, Value[] lastValue) {
         final List<Value[]> result = new ArrayList<>();
         getRowsInRangeRec(
                 session,
@@ -174,7 +189,7 @@ public class CombinedCacheMetaData {
                 firstValue,
                 lastValue,
                 0);
-        return result.iterator();
+        return result;
     }
 
     /**
@@ -199,11 +214,11 @@ public class CombinedCacheMetaData {
             counters[level] = lowerBound[level];
             while (!counters[level].equals(upperBound[level])) {
                 getRowsInRangeRec(session, result, counters, lowerBound, upperBound, level + 1);
-                counters[level] = counters[level].add(ValueLong.get(1));
+                counters[level] = counters[level].add(one);
             }
 
-            // One more recursive call as the upper bound should be included
-            getRowsInRangeRec(session, result, counters, lowerBound, upperBound, level + 1);
+                // One more recursive call as the upper bound should be included for all but the lowest level
+                getRowsInRangeRec(session, result, counters, lowerBound, upperBound, level + 1);
         }
     }
 

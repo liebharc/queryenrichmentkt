@@ -30,7 +30,7 @@ data class CacheKeyMataInfo(val cache: Cache<CacheKey, StudentClass>) : ICacheMe
         return cache.size();
     }
 
-    override fun getOrNull(key: List<Any?>): List<Any?> {
+    override fun getOrNull(key: Array<Any?>): List<Any?> {
         if (key.get(1) == null) {
             return cache.asMap().entries.filter { entry -> entry.key.classId == key.get(0) as Long}.map { entry -> entry.value }
         }

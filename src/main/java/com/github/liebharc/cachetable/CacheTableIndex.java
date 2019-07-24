@@ -1,9 +1,6 @@
 package com.github.liebharc.cachetable;
 
-import kotlin.NotImplementedError;
-import org.checkerframework.checker.units.qual.C;
 import org.h2.command.dml.AllColumnsForPlan;
-import org.h2.engine.Mode;
 import org.h2.engine.Session;
 import org.h2.index.*;
 import org.h2.message.DbException;
@@ -20,7 +17,6 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class CacheTableIndex extends BaseIndex {
 
@@ -70,7 +66,7 @@ public class CacheTableIndex extends BaseIndex {
         Value[] firstValue = getValue(first);
         Value[] lastValue = getValue(last);
 
-        if (firstValue.equals(lastValue)) {
+        if (Arrays.equals(firstValue, lastValue)) {
             return findSingleValue(session, firstValue);
         }
 
@@ -97,14 +93,23 @@ public class CacheTableIndex extends BaseIndex {
          * result.
          */
         List<Value[]> values = metaInfo.getRowOrNull(firstValue, session);
+        return createCursor(values);
+    }
+
+    private Cursor createCursor(List<Value[]> values) {
         if (values == null) {
             return new CacheCursor(emptyResult.iterator());
         }
+
+        if (values.size() == 1) {
+            return new SingleRowCursor(new RowImpl(values.get(0), 0));
+        }
+
         return new CacheCursor(values.iterator());
     }
 
     private Cursor findRangeValue(Session session, Value[] firstValue, Value[] lastValue) {
-        return new CacheCursor(metaInfo.getRowsInRange(session, firstValue, lastValue));
+        return new CacheCursor(metaInfo.getRowsInRange(session, firstValue, lastValue).iterator());
     }
 
     private Cursor findAll(Session session) {
