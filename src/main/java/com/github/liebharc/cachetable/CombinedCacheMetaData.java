@@ -220,8 +220,8 @@ public class CombinedCacheMetaData {
                 counters[level] = counters[level].add(one);
             }
 
-                // One more recursive call as the upper bound should be included for all but the lowest level
-                getRowsInRangeRec(session, result, counters, lowerBound, upperBound, level + 1);
+            // One more recursive call as the upper bound should be included
+            getRowsInRangeRec(session, result, counters, lowerBound, upperBound, level + 1);
         }
     }
 
