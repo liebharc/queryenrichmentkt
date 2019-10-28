@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
 
 public class MapKeyTest {
 
-    private Map<MapKey, Long> mMap = new ConcurrentHashMap<>();
+    private DomainMap<Long> mMap = new DomainMap<>();
 
     @Before
     public void createData() {
@@ -40,9 +40,9 @@ public class MapKeyTest {
     @Test
     public void mapKeyClearDomainTest() {
         long start = System.currentTimeMillis();
-        this.clearKey(1001L);
-        this.clearKey(2001L);
-        this.clearKey(3001L);
+        mMap.removeAll(1001L);
+        mMap.removeAll(2001L);
+        mMap.removeAll(3001L);
         System.out.println(System.currentTimeMillis() - start);
     }
 
@@ -133,6 +133,10 @@ public class MapKeyTest {
             return previousValue;
         }
 
+        public void removeAll(long domainId) {
+            mInnerMap.remove(domainId);
+        }
+
         @Override
         public void putAll(@NotNull Map<? extends MapKey, ? extends V> m) {
             for (Entry<? extends MapKey, ? extends V> entry : m.entrySet()) {
@@ -181,11 +185,13 @@ public class MapKeyTest {
         private final long domainId;
         private final String type;
         private final String[] coIds;
+        private final int mHashCode;
 
         public MapKey(long domainId, String type, String... coIds) {
             this.domainId = domainId;
             this.type = type;
             this.coIds = coIds;
+            mHashCode = this.calcHashCode();
         }
 
         @Override
@@ -200,6 +206,10 @@ public class MapKeyTest {
 
         @Override
         public int hashCode() {
+           return mHashCode;
+        }
+
+        private int calcHashCode() {
             int result = Objects.hash(domainId, type);
             result = 31 * result + Arrays.hashCode(coIds);
             return result;
